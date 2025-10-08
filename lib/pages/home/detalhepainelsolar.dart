@@ -1,134 +1,273 @@
-// >>>>>>>>>>> PAGINA EM JSX
+import 'dart:async';
+import 'package:flutter/material.dart';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { fetchEnergia } from '../../endpoints/Api';
-
-const FaArrowLeft = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" 
-    viewBox="0 0 24 24" fill="none" stroke="currentColor" 
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 12H5"></path>
-    <path d="M12 19l-7-7 7-7"></path>
-  </svg>
-);
-
-export default function DetalhePainelSolar() {
-  const navigate = useNavigate();
-
-  const [ligado, setLigado] = useState(false);
-  const [energia, setEnergia] = useState(null);
-  const [loadingEnergia, setLoadingEnergia] = useState(true);
-  const [erroEnergia, setErroEnergia] = useState(null);
-
-  // Para inicializar `ligado` a partir da telemetria apenas na primeira carga
-  const inicializadoLigado = useRef(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const load = async () => {
-      try {
-        setLoadingEnergia(true);
-        setErroEnergia(null);
-        const data = await fetchEnergia("painel"); // trocar pelo ID real se necessário
-        if (!isMounted) return;
-        setEnergia(data || null);
-
-        // inicializa `ligado` a partir da telemetria somente na primeira vez
-        if (!inicializadoLigado.current) {
-          const ligadoTelemetria = data?.ligado ?? data?.energia?.ligado;
-          if (typeof ligadoTelemetria === 'boolean') {
-            setLigado(ligadoTelemetria);
-          }
-          inicializadoLigado.current = true;
-        }
-      } catch (e) {
-        if (isMounted) setErroEnergia(e.message || String(e));
-      } finally {
-        if (isMounted) setLoadingEnergia(false);
-      }
-    };
-
-    load();
-    const t = setInterval(load, 5000);
-    return () => { isMounted = false; clearInterval(t); };
-  }, []);
-
-  const fmt = (n, digits = 3) => {
-    if (n === null || n === undefined) return '—';
-    const num = Number(n);
-    if (Number.isNaN(num)) return '—';
-    return num.toFixed(digits);
+// Simulação de chamada de API — substitua pela sua implementação real
+Future<Map<String, dynamic>> fetchEnergia(String id) async {
+  await Future.delayed(const Duration(seconds: 1));
+  return {
+    'w_instantaneo': 532.45,
+    'kwh_hoje': 1.234,
+    'kwh_mes': 23.876,
+    'ligado': true,
   };
+}
 
-  const watts = energia?.w_instantaneo;
-  const kwhHoje = energia?.kwh_hoje;
-  const kwhMes = energia?.kwh_mes;
+class DetalhePainelSolar extends StatefulWidget {
+  const DetalhePainelSolar({Key? key}) : super(key: key);
 
-  return (
-    <div className="device-list-container" style={{ paddingTop: '20px' }}>
-      {/* Topo com botão voltar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <button 
-          onClick={() => navigate(-1)} 
-          style={{ background: 'none', border: 'none', color: 'var(--cor-texto-claro)', fontSize: '20px', cursor: 'pointer' }}
-        >
-          <FaArrowLeft />
-        </button>
-      </div>
+  @override
+  State<DetalhePainelSolar> createState() => _DetalhePainelSolarState();
+}
 
-      <h1 style={{ fontSize: '30px', color: 'var(--cor-primaria)', marginBottom: '10px' }}>
-        Painel solar
-      </h1>
-      <p style={{ color: 'var(--cor-texto-escuro)', fontSize: '16px' }}>
-        Configuração e monitoramento do seu painel
-      </p>
+class _DetalhePainelSolarState extends State<DetalhePainelSolar> {
+  bool ligado = false;
+  Map<String, dynamic>? energia;
+  bool loadingEnergia = true;
+  String? erroEnergia;
+  bool inicializadoLigado = false;
+  Timer? timer;
 
-      {/* Switch de ligar/desligar */}
-      <div 
-        className={`device-card ${ligado ? 'active' : ''}`} 
-        style={{ marginTop: '20px' }}
-      >
-        <div className="device-info">
-          <h3 style={{ color: 'var(--cor-texto-claro)' }}>Status</h3>
-          <p style={{ color: ligado ? 'var(--cor-texto-claro)' : 'var(--cor-texto-escuro)' }}>
-            {ligado ? 'LIGADO' : 'DESLIGADO'}
-          </p>
-        </div>
+  @override
+  void initState() {
+    super.initState();
+    _loadEnergia();
+    timer = Timer.periodic(const Duration(seconds: 5), (_) => _loadEnergia());
+  }
 
-        <div 
-          className="device-toggle"
-          onClick={() => setLigado(!ligado)}
-          style={{ cursor: 'pointer' }}
-        >
-          <div className={`device-toggle-circle ${ligado ? 'active' : ''}`}></div>
-        </div>
-      </div>
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
 
-      {/* Card de consumo */}
-      <div className="consumption-card" style={{ marginTop: '20px' }}>
-        <h3 className="card-label">Informações de uso</h3>
+  Future<void> _loadEnergia() async {
+    try {
+      setState(() {
+        loadingEnergia = true;
+        erroEnergia = null;
+      });
 
-        {loadingEnergia && <p style={{ color: 'var(--cor-texto-claro)', marginTop: 10 }}>Carregando telemetria…</p>}
-        {erroEnergia && !loadingEnergia && (
-          <p style={{ color: 'var(--cor-primaria)', marginTop: 10 }}>Erro: {erroEnergia}</p>
-        )}
+      final data = await fetchEnergia('painel');
+      setState(() {
+        energia = data;
+        // Inicializa o "ligado" na primeira vez com base na telemetria
+        if (!inicializadoLigado && data.containsKey('ligado')) {
+          ligado = data['ligado'] == true;
+          inicializadoLigado = true;
+        }
+      });
+    } catch (e) {
+      setState(() {
+        erroEnergia = e.toString();
+      });
+    } finally {
+      setState(() {
+        loadingEnergia = false;
+      });
+    }
+  }
 
-        {!loadingEnergia && !erroEnergia && (
-          <>
-            <p style={{ color: 'var(--cor-texto-claro)', margin: '10px 0' }}>
-              <strong>Potência agora:</strong> {fmt(watts, 2)} W
-            </p>
-            <p style={{ color: 'var(--cor-texto-claro)', margin: '10px 0' }}>
-              <strong>Hoje:</strong> {fmt(kwhHoje, 3)} kWh
-            </p>
-            <p style={{ color: 'var(--cor-texto-claro)' }}>
-              <strong>Mês:</strong> {fmt(kwhMes, 3)} kWh
-            </p>
-          </>
-        )}
-      </div>
-    </div>
-  );
+  String fmt(dynamic n, [int digits = 3]) {
+    if (n == null) return '—';
+    final num? numValue = num.tryParse(n.toString());
+    if (numValue == null) return '—';
+    return numValue.toStringAsFixed(digits);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final watts = energia?['w_instantaneo'];
+    final kwhHoje = energia?['kwh_hoje'];
+    final kwhMes = energia?['kwh_mes'];
+
+    final primaryColor = Theme.of(context).primaryColor;
+    const lightText = Colors.white;
+    const darkText = Colors.black87;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ========= BOTÃO VOLTAR =========
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back_ios_new, size: 22),
+                    color: Colors.grey[700],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // ========= TÍTULO =========
+              Text(
+                'Painel solar',
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Configuração e monitoramento do seu painel',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ========= CARD STATUS =========
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                decoration: BoxDecoration(
+                  color: ligado ? primaryColor : Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    )
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Status',
+                          style: TextStyle(
+                            color: ligado ? lightText : Colors.black54,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          ligado ? 'LIGADO' : 'DESLIGADO',
+                          style: TextStyle(
+                            color: ligado ? lightText : darkText,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // SWITCH personalizado
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          ligado = !ligado;
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 55,
+                        height: 30,
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: ligado ? Colors.green : Colors.grey.shade400,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        alignment:
+                            ligado ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ========= CARD CONSUMO =========
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    )
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Informações de uso',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    if (loadingEnergia)
+                      const Text(
+                        'Carregando telemetria…',
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                    if (erroEnergia != null && !loadingEnergia)
+                      Text(
+                        'Erro: $erroEnergia',
+                        style: TextStyle(color: primaryColor),
+                      ),
+                    if (!loadingEnergia && erroEnergia == null) ...[
+                      Text(
+                        'Potência agora: ${fmt(watts, 2)} W',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Hoje: ${fmt(kwhHoje, 3)} kWh',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Mês: ${fmt(kwhMes, 3)} kWh',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

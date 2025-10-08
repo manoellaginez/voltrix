@@ -1,454 +1,540 @@
-// >>>>>>>>>>> PAGINA EM JSX
+import 'package:flutter/material.dart';
+import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+class GerenciarPage extends StatefulWidget {
+  const GerenciarPage({super.key});
 
-// Ícones SVG Inline (Ajustados para o tema)
-const FaArrowLeft = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M19 12H5"></path>
-        <path d="M12 19l-7-7 7-7"></path>
-    </svg>
-);
-const FaClock = ({ style = {} }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-        <circle cx="12" cy="12" r="10"></circle>
-        <polyline points="12 6 12 12 16 14"></polyline>
-    </svg>
-);
-const FaBolt = ({ style = {} }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-    </svg>
-);
-const FaTarget = ({ style = {} }) => ( // Novo Ícone para Metas
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-        <circle cx="12" cy="12" r="10"></circle>
-        <circle cx="12" cy="12" r="6"></circle>
-        <circle cx="12" cy="12" r="2"></circle>
-    </svg>
-);
-
-
-// Componente principal da página de Gerenciamento
-export default function Gerenciar() {
-    const navigate = useNavigate();
-    const [isEconomyModeActive, setIsEconomyModeActive] = useState(false);
-    const [shouldAutoRelink, setShouldAutoRelink] = useState(false);
-    
-    // NOVO ESTADO: Armazena o status de ativação/desativação de cada regra
-    const [ruleStatuses, setRuleStatuses] = useState({
-        ruleTarget: true,
-        ruleClock: true,
-        ruleBolt: false,
-    });
-
-
-    // Dados simulados (para evitar dependência do estado global de App.jsx neste componente)
-    const availableDevices = [
-        { id: 1, name: 'Lâmpada Sala' },
-        { id: 2, name: 'Ar Cond. Quarto' },
-        { id: 3, name: 'Chuveiro Elétrico' },
-    ];
-    
-    // Cores baseadas nas suas variáveis CSS
-    const primaryColor = 'var(--cor-primaria, #B42222)';
-    const textColor = 'var(--cor-texto-claro, #333333)';
-    const secondaryTextColor = 'var(--cor-texto-escuro, #a6a6a6)';
-    const cardBackground = 'var(--cor-fundo-card, #f6f6f6)';
-    const successColor = 'var(--cor-sucesso, #28a745)';
-
-    const [selectedDevice, setSelectedDevice] = useState(availableDevices[0]?.id || null);
-    const [actionTime, setActionTime] = useState('23:00');
-    const [actionType, setActionType] = useState('Desligar');
-    const [relinkTime, setRelinkTime] = useState('07:00'); // Novo estado para horário de retorno
-
-    const handleSchedule = () => {
-        const deviceName = availableDevices.find(d => d.id === parseInt(selectedDevice))?.name;
-        
-        let message = `Agendamento criado: ${actionType} ${deviceName} às ${actionTime}.`;
-        if (shouldAutoRelink) {
-            message += ` Ligar novamente às ${relinkTime}.`;
-        } else if (actionType === 'Desligar') {
-             message += ` O dispositivo permanecerá ${actionType} até ser ligado manualmente.`;
-        }
-
-        // Substituir alert() por um modal em produção
-        alert(message);
-    };
-
-    // Função para alternar o status de uma regra
-    const handleToggleRule = (ruleId) => {
-        setRuleStatuses(prev => ({
-            ...prev,
-            [ruleId]: !prev[ruleId]
-        }));
-    };
-
-    // Componente customizado de Toggle para Regras e Otimização
-    const CustomToggle = ({ isActive, onClick, activeColor }) => (
-        <div 
-            className="device-toggle"
-            style={{ 
-                backgroundColor: isActive ? activeColor : 'var(--cor-borda)',
-                width: '40px', 
-                height: '20px', 
-                borderRadius: '10px',
-                position: 'relative',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s',
-                flexShrink: 0,
-            }} 
-            onClick={onClick}
-        >
-             <div 
-                className="device-toggle-circle"
-                style={{
-                    position: 'absolute',
-                    top: '2px',
-                    left: isActive ? '22px' : '2px',
-                    width: '16px',
-                    height: '16px',
-                    backgroundColor: 'white',
-                    borderRadius: '50%',
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                    transition: 'transform 0.3s, left 0.3s'
-                }}
-            ></div>
-        </div>
-    );
-    
-    // Componente para estilizar os cards de Regra (RuleDetailCard)
-    const RuleDetailCard = ({ icon: Icon, title, description, iconColor, ruleId, handleToggleRule, isActive }) => {
-        const currentIconColor = isActive ? iconColor : secondaryTextColor;
-
-        return (
-            <div 
-                style={{
-                    padding: '15px',
-                    borderRadius: '12px',
-                    backgroundColor: cardBackground, 
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                    marginBottom: '15px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    border: 'none',
-                    fontFamily: 'Inter, sans-serif'
-                }}
-            >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <Icon style={{ color: currentIconColor, marginRight: '15px', marginTop: '3px', fontSize: '22px', flexShrink: 0 }} />
-                        <h3 style={{ color: textColor, margin: 0, fontSize: '16px', fontWeight: 'bold' }}>{title}</h3>
-                    </div>
-                    
-                    {/* TOGGLE PARA ATIVAR/DESATIVAR A REGRA INDIVIDUAL */}
-                    <CustomToggle 
-                        isActive={isActive} 
-                        onClick={() => handleToggleRule(ruleId)} 
-                        activeColor={primaryColor} 
-                    />
-                </div>
-                
-                <p style={{ color: secondaryTextColor, margin: '5px 0 0 0', fontSize: '13px', lineHeight: '1.4' }}>{description}</p>
-            </div>
-        );
-    };
-
-    return (
-        <div className="device-list-container" style={{ padding: '0 15px', paddingBottom: '80px', fontFamily: 'Inter, sans-serif' }}>
-            
-            {/* BOTÃO DE VOLTAR */}
-            <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', paddingTop: '20px', marginBottom: '15px' }}>
-                <button 
-                    onClick={() => navigate(-1)} 
-                    style={{ background: 'none', border: 'none', color: textColor, fontSize: '20px', cursor: 'pointer', padding: '0', marginRight: '10px', fontFamily: 'Inter, sans-serif' }}
-                >
-                    <FaArrowLeft />
-                </button>
-            </div>
-
-            {/* TÍTULO PRINCIPAL */}
-            <h1 style={{ color: primaryColor, fontSize: '28px', fontWeight: 'bold', margin: '0 0 5px', fontFamily: 'Inter, sans-serif' }}>
-                Gerenciamento inteligente
-            </h1>
-            <p style={{ color: secondaryTextColor, fontSize: '17px', marginBottom: '30px', fontFamily: 'Inter, sans-serif' }}>
-                Programe rotinas e ative o modo de otimização de gastos
-            </p>
-
-            {/* --- SEÇÃO 1: MODO DE ECONOMIA ATIVA (Toggle) --- */}
-            <div 
-                style={{
-                    padding: '15px',
-                    borderRadius: '12px',
-                    backgroundColor: cardBackground,
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.05)',
-                    marginBottom: '25px',
-                    border: 'none',
-                }}
-            >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' /* REMOVIDA MARGIN E PADDING BOTTOM AQUI */ }}>
-                    <h2 style={{ color: primaryColor, margin: 0, fontSize: '20px', fontFamily: 'Inter, sans-serif' }}>Modo de otimização ativa</h2>
-                    {/* Toggle Switch */}
-                    <CustomToggle 
-                        isActive={isEconomyModeActive} 
-                        onClick={() => setIsEconomyModeActive(!isEconomyModeActive)} 
-                        activeColor={primaryColor} // CORRIGIDO: Usando primaryColor para o toggle
-                    />
-                </div>
-
-                {/* CORREÇÃO FINAL: Removed a div externa e a margem do parágrafo */}
-                <p style={{ color: textColor, margin: '5px 0 0 0', fontSize: '14px', lineHeight: '1.4', fontFamily: 'Inter, sans-serif' }}>
-                    Este modo monitora o consumo em tempo real, se seus gastos estiverem significativamente elevados e excederem a projeção da sua meta, enviaremos sugestões proativas de desligamento para reverter a tendência
-                    <br/>
-                    <span style={{ color: isEconomyModeActive ? primaryColor : secondaryTextColor, fontWeight: 'bold' }}>
-                        Status: {isEconomyModeActive ? 'ativo' : 'desativado'}
-                    </span>
-                </p>
-            </div>
-            
-            {/* --- SEÇÃO 2: AGENDAMENTO MANUAL --- */}
-            <h2 style={{ color: textColor, fontSize: '20px', fontWeight: 'bold', marginBottom: '15px', fontFamily: 'Inter, sans-serif' }}>
-                Agendar rotina de desligamento
-            </h2>
-            
-            <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: cardBackground, boxShadow: '0 4px 8px rgba(0, 0, 0, 0.05)', marginBottom: '30px', fontFamily: 'Inter, sans-serif' }}>
-                
-                {/* SELEÇÃO DE DISPOSITIVO */}
-                <div style={{ marginBottom: '15px' }}>
-                    <label style={{ display: 'block', color: secondaryTextColor, marginBottom: '5px', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>Selecione o dispositivo:</label>
-                    <select
-                        value={selectedDevice || ''}
-                        onChange={(e) => setSelectedDevice(e.target.value)}
-                        style={inputStyle}
-                    >
-                        {availableDevices.map(d => (
-                            <option key={d.id} value={d.id}>{d.name}</option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* AÇÃO E HORÁRIO */}
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                    <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', color: secondaryTextColor, marginBottom: '5px', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>Ação:</label>
-                        <select
-                            value={actionType}
-                            onChange={(e) => setActionType(e.target.value)}
-                            style={inputStyle}
-                        >
-                            <option value="Desligar">Desligar</option>
-                            <option value="Ligar">Ligar</option>
-                        </select>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', color: secondaryTextColor, marginBottom: '5px', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>Horário:</label>
-                        <input
-                            type="time"
-                            value={actionTime}
-                            onChange={(e) => setActionTime(e.target.value)}
-                            style={inputStyle}
-                        />
-                    </div>
-                </div>
-
-                {/* NOVO: OPÇÃO DE LIGAR NOVAMENTE */}
-                {actionType === 'Desligar' && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--cor-borda)', paddingTop: '15px', marginBottom: '25px' }}>
-                         <p style={{ fontWeight: 'bold', margin: 0, fontSize: '16px', color: textColor, fontFamily: 'Inter, sans-serif' }}>
-                            Ligar novamente?
-                        </p>
-                        {/* Toggle Switch para Ligar Novamente */}
-                        <CustomToggle 
-                            isActive={shouldAutoRelink} 
-                            onClick={() => setShouldAutoRelink(!shouldAutoRelink)} 
-                            activeColor={primaryColor} // CORRIGIDO: Usando primaryColor para o toggle
-                        />
-                    </div>
-                )}
-
-                {/* NOVO: CAMPO DE HORA DE RETORNO (Só se o toggle estiver ativo) */}
-                {shouldAutoRelink && actionType === 'Desligar' && (
-                    <div style={{ marginBottom: '25px' }}>
-                        <label style={{ display: 'block', color: secondaryTextColor, marginBottom: '5px', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>Horário para ligar novamente:</label>
-                         <input
-                            type="time"
-                            value={relinkTime}
-                            onChange={(e) => setRelinkTime(e.target.value)}
-                            style={inputStyle}
-                        />
-                    </div>
-                )}
-
-
-                <button 
-                    onClick={handleSchedule}
-                    style={{
-                        backgroundColor: primaryColor,
-                        color: 'white',
-                        padding: '10px 15px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        border: 'none',
-                        width: '100%',
-                        transition: 'background-color 0.3s',
-                        fontFamily: 'Inter, sans-serif'
-                    }}
-                >
-                    AGENDAR ROTINA
-                </button>
-            </div>
-
-
-            {/* --- SEÇÃO 3: SUGESTÕES INTELIGENTES (Metas e Regras de Consumo) --- */}
-            <h2 style={{ color: textColor, fontSize: '20px', fontWeight: 'bold', marginBottom: '15px', fontFamily: 'Inter, sans-serif' }}>
-                Otimização ativa
-            </h2>
-            
-            {/* Regra 3: Desligamento Baseado em Metas e Orçamento */}
-            <RuleDetailCard 
-                icon={FaTarget}
-                title="Otimização por metas de orçamento"
-                description="O sistema monitora a projeção de gastos. Se você exceder a meta definida, o app sugere o desligamento de dispositivos de alto consumo (como aquecedores) para reverter a tendência e manter seu orçamento"
-                iconColor={primaryColor}
-                ruleId="ruleTarget"
-                handleToggleRule={handleToggleRule}
-                isActive={ruleStatuses.ruleTarget}
-            />
-
-            {/* Regra 1: Esqueci ligado (Inatividade) */}
-            <RuleDetailCard 
-                icon={FaClock}
-                title="Regra de inatividade"
-                description="Se o consumo do aparelho (ex: Televisão) for mantido em modo stand-by (abaixo de 5 Watts) por mais de 3 horas durante a noite (23:00h - 07:00h), o app envia um alerta sugerindo o desligamento"
-                iconColor={primaryColor}
-                ruleId="ruleClock"
-                handleToggleRule={handleToggleRule}
-                isActive={ruleStatuses.ruleClock}
-            />
-            
-            {/* Regra 2: Consumo Zumbi (Baixo Constante) */}
-            <RuleDetailCard 
-                icon={FaBolt}
-                title="Regra de consumo fantasma"
-                description="Se o dispositivo estiver consumindo menos de 1 Watt por mais de 8 horas seguidas (indicando carregamento completo ou inatividade), a tomada desliga automaticamente para eliminar o consumo passivo"
-                iconColor={primaryColor}
-                ruleId="ruleBolt"
-                handleToggleRule={handleToggleRule}
-                isActive={ruleStatuses.ruleBolt}
-            />
-
-
-            {/* --- SEÇÃO 4: VISÃO GERAL MELHORADA --- */}
-            <div 
-                style={{ 
-                    marginTop: '30px', 
-                    padding: '15px', 
-                    borderRadius: '12px', 
-                    backgroundColor: cardBackground, 
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                    fontFamily: 'Inter, sans-serif'
-                }}
-            >
-                <h3 style={{ color: primaryColor, margin: '0 0 10px 0', fontSize: '18px', fontWeight: 'bold' }}>
-                    Status das regras ativas
-                </h3>
-                <p style={{ color: textColor, margin: '0 0 5px 0', fontSize: '14px' }}>
-                    <span style={{ fontWeight: 'bold', color: successColor }}>{Object.values(ruleStatuses).filter(status => status).length}/3 regras ativas</span>
-                </p>
-                <p style={{ color: textColor, margin: '0 0 5px 0', fontSize: '14px' }}>
-                    <span style={{ fontWeight: 'bold', color: primaryColor }}>Modo de otimização: {isEconomyModeActive ? 'ativo' : 'desativado'}</span>
-                </p>
-                <p style={{ color: textColor, margin: 0, fontSize: '14px' }}>
-                    <span style={{ fontWeight: 'bold', color: secondaryTextColor }}>Próxima ação: nenhuma rotina agendada</span>
-                </p>
-            </div>
-            
-        </div>
-    );
+  @override
+  State<GerenciarPage> createState() => _GerenciarPageState();
 }
 
-// Componente para estilizar os cards de Regra (RuleDetailCard)
-const RuleDetailCard = ({ icon: Icon, title, description, iconColor, ruleId, handleToggleRule, isActive }) => (
-    <div 
-        style={{
-            padding: '15px',
-            borderRadius: '12px',
-            backgroundColor: cardBackground, 
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            marginBottom: '15px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            border: 'none',
-            fontFamily: 'Inter, sans-serif'
-        }}
-    >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-            {/* ÍCONE E TÍTULO */}
-            <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                <Icon style={{ color: isActive ? iconColor : 'var(--cor-texto-escuro)', marginRight: '15px', marginTop: '3px', fontSize: '22px', flexShrink: 0 }} />
-                <h3 style={{ color: textColor, margin: 0, fontSize: '16px', fontWeight: 'bold' }}>{title}</h3>
-            </div>
+class _GerenciarPageState extends State<GerenciarPage> {
+  // ---------------------- CORES ----------------------
+  static const Color primaryColor = Color(0xFFB42222);
+  static const Color textColor = Color(0xFF333333);
+  static const Color secondaryTextColor = Color(0xFFA6A6A6);
+  static const Color cardBackground = Color(0xFFF6F6F6);
+  static const Color successColor = Color(0xFF28A745);
+  static const Color borderColor = Color(0xFFE0E0E0);
 
-            {/* TOGGLE PARA ATIVAR/DESATIVAR A REGRA INDIVIDUAL */}
-            <CustomToggle 
-                isActive={isActive} 
-                onClick={() => handleToggleRule(ruleId)} 
-                activeColor={primaryColor} // Usando o vermelho primário
-            />
-        </div>
+  // ---------------------- ESTADOS ----------------------
+  bool isEconomyModeActive = false;
+  bool shouldAutoRelink = false;
 
-        <p style={{ color: secondaryTextColor, margin: '5px 0 0 0', fontSize: '13px', lineHeight: '1.4' }}>{description}</p>
-    </div>
-);
+  Map<String, bool> ruleStatuses = {
+    'ruleTarget': true,
+    'ruleClock': true,
+    'ruleBolt': false,
+  };
 
+  final List<Map<String, dynamic>> availableDevices = [
+    {'id': 1, 'name': 'Lâmpada Sala'},
+    {'id': 2, 'name': 'Ar Cond. Quarto'},
+    {'id': 3, 'name': 'Chuveiro Elétrico'},
+  ];
 
-// Componente Customizado de Toggle (para Reutilização)
-const CustomToggle = ({ isActive, onClick, activeColor }) => (
-    <div 
-        className="device-toggle"
-        style={{ 
-            backgroundColor: isActive ? activeColor : 'var(--cor-borda)',
-            width: '40px', 
-            height: '20px', 
-            borderRadius: '10px',
-            position: 'relative',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s',
-            flexShrink: 0,
-        }} 
-        onClick={onClick}
-    >
-         <div 
-            className="device-toggle-circle"
-            style={{
-                position: 'absolute',
-                top: '2px',
-                left: isActive ? '22px' : '2px',
-                width: '16px',
-                height: '16px',
-                backgroundColor: 'white',
-                borderRadius: '50%',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                transition: 'transform 0.3s, left 0.3s'
-            }}
-        ></div>
-    </div>
-);
+  int? selectedDevice;
+  String actionTime = '23:00';
+  String actionType = 'Desligar';
+  String relinkTime = '07:00';
 
+  @override
+  void initState() {
+    super.initState();
+    selectedDevice = availableDevices[0]['id'];
+  }
 
-// Estilo customizado para inputs e selects
-const inputStyle = {
-    width: '100%',
-    padding: '10px',
-    borderRadius: '8px',
-    border: '1px solid var(--cor-borda)',
-    backgroundColor: 'white',
-    color: 'var(--cor-texto-claro)',
-    fontSize: '16px',
-    boxSizing: 'border-box',
-    outline: 'none',
-    fontFamily: 'Inter, sans-serif',
-};
+  // ---------------------- FUNÇÕES ----------------------
+  void handleSchedule() {
+    final deviceName = availableDevices
+        .firstWhere((d) => d['id'] == selectedDevice)['name'];
+
+    String message =
+        "Agendamento criado: $actionType $deviceName às $actionTime.";
+    if (shouldAutoRelink) {
+      message += " Ligar novamente às $relinkTime.";
+    } else if (actionType == "Desligar") {
+      message += " O dispositivo permanecerá desligado até ser ligado manualmente.";
+    }
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Agendamento'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          )
+        ],
+      ),
+    );
+  }
+
+  void toggleRule(String ruleId) {
+    setState(() {
+      ruleStatuses[ruleId] = !(ruleStatuses[ruleId] ?? false);
+    });
+  }
+
+  Future<void> pickTime(bool isRelink) async {
+    final initialTime = TimeOfDay(
+      hour: int.parse((isRelink ? relinkTime : actionTime).split(":")[0]),
+      minute: int.parse((isRelink ? relinkTime : actionTime).split(":")[1]),
+    );
+    final picked = await showTimePicker(context: context, initialTime: initialTime);
+    if (picked != null) {
+      final formatted =
+          picked.hour.toString().padLeft(2, '0') + ':' + picked.minute.toString().padLeft(2, '0');
+      setState(() {
+        if (isRelink) {
+          relinkTime = formatted;
+        } else {
+          actionTime = formatted;
+        }
+      });
+    }
+  }
+
+  // ---------------------- UI ----------------------
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // VOLTAR
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(FeatherIcons.arrowLeft, color: textColor),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+
+              // TÍTULO
+              Text(
+                "Gerenciamento inteligente",
+                style: const TextStyle(
+                  color: primaryColor,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                "Programe rotinas e ative o modo de otimização de gastos",
+                style: const TextStyle(
+                  color: secondaryTextColor,
+                  fontSize: 17,
+                ),
+              ),
+              const SizedBox(height: 30),
+
+              // MODO ECONOMIA
+              _CardContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Modo de otimização ativa",
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor),
+                        ),
+                        CustomToggle(
+                          isActive: isEconomyModeActive,
+                          onTap: () {
+                            setState(() => isEconomyModeActive = !isEconomyModeActive);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "Este modo monitora o consumo em tempo real, se seus gastos estiverem significativamente elevados e excederem a projeção da sua meta, enviaremos sugestões proativas de desligamento para reverter a tendência\n",
+                      style: const TextStyle(color: textColor, fontSize: 14),
+                    ),
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 14),
+                        children: [
+                          const TextSpan(
+                            text: "Status: ",
+                            style: TextStyle(color: textColor),
+                          ),
+                          TextSpan(
+                            text: isEconomyModeActive ? "ativo" : "desativado",
+                            style: TextStyle(
+                              color: isEconomyModeActive
+                                  ? primaryColor
+                                  : secondaryTextColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 25),
+
+              // AGENDAR
+              const Text(
+                "Agendar rotina de desligamento",
+                style: TextStyle(
+                    color: textColor, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 15),
+              _CardContainer(
+                child: Column(
+                  children: [
+                    // Selecionar dispositivo
+                    _Label("Selecione o dispositivo:"),
+                    DropdownButtonFormField<int>(
+                      value: selectedDevice,
+                      decoration: _inputDecoration(),
+                      items: availableDevices
+                          .map((d) => DropdownMenuItem(
+                                value: d['id'],
+                                child: Text(d['name']),
+                              ))
+                          .toList(),
+                      onChanged: (val) => setState(() => selectedDevice = val),
+                    ),
+                    const SizedBox(height: 15),
+
+                    // Ação e horário
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _Label("Ação:"),
+                              DropdownButtonFormField<String>(
+                                value: actionType,
+                                decoration: _inputDecoration(),
+                                items: const [
+                                  DropdownMenuItem(
+                                      value: "Desligar", child: Text("Desligar")),
+                                  DropdownMenuItem(
+                                      value: "Ligar", child: Text("Ligar")),
+                                ],
+                                onChanged: (val) =>
+                                    setState(() => actionType = val!),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _Label("Horário:"),
+                              InkWell(
+                                onTap: () => pickTime(false),
+                                child: InputDecorator(
+                                  decoration: _inputDecoration(),
+                                  child: Text(actionTime),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Toggle ligar novamente
+                    if (actionType == "Desligar")
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Ligar novamente?",
+                            style: TextStyle(
+                                fontSize: 16,
+                                color: textColor,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          CustomToggle(
+                            isActive: shouldAutoRelink,
+                            onTap: () {
+                              setState(() => shouldAutoRelink = !shouldAutoRelink);
+                            },
+                          ),
+                        ],
+                      ),
+
+                    const SizedBox(height: 15),
+
+                    if (shouldAutoRelink && actionType == "Desligar")
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _Label("Horário para ligar novamente:"),
+                          InkWell(
+                            onTap: () => pickTime(true),
+                            child: InputDecorator(
+                              decoration: _inputDecoration(),
+                              child: Text(relinkTime),
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 25),
+
+                    ElevatedButton(
+                      onPressed: handleSchedule,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text(
+                        "AGENDAR ROTINA",
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // OTIMIZAÇÃO ATIVA - Regras
+              const Text(
+                "Otimização ativa",
+                style: TextStyle(
+                    color: textColor, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 15),
+              RuleDetailCard(
+                icon: FeatherIcons.target,
+                title: "Otimização por metas de orçamento",
+                description:
+                    "O sistema monitora a projeção de gastos. Se você exceder a meta definida, o app sugere o desligamento de dispositivos de alto consumo (como aquecedores) para reverter a tendência e manter seu orçamento",
+                isActive: ruleStatuses['ruleTarget']!,
+                onToggle: () => toggleRule('ruleTarget'),
+              ),
+              RuleDetailCard(
+                icon: FeatherIcons.clock,
+                title: "Regra de inatividade",
+                description:
+                    "Se o consumo do aparelho for mantido em modo stand-by (abaixo de 5 Watts) por mais de 3 horas durante a noite (23:00h - 07:00h), o app envia um alerta sugerindo o desligamento",
+                isActive: ruleStatuses['ruleClock']!,
+                onToggle: () => toggleRule('ruleClock'),
+              ),
+              RuleDetailCard(
+                icon: FeatherIcons.bolt,
+                title: "Regra de consumo fantasma",
+                description:
+                    "Se o dispositivo estiver consumindo menos de 1 Watt por mais de 8 horas seguidas, a tomada desliga automaticamente para eliminar o consumo passivo",
+                isActive: ruleStatuses['ruleBolt']!,
+                onToggle: () => toggleRule('ruleBolt'),
+              ),
+
+              // VISÃO GERAL
+              const SizedBox(height: 30),
+              _CardContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Status das regras ativas",
+                      style: TextStyle(
+                          color: primaryColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "${ruleStatuses.values.where((e) => e).length}/3 regras ativas",
+                      style: const TextStyle(
+                          color: successColor, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      "Modo de otimização: ${isEconomyModeActive ? 'ativo' : 'desativado'}",
+                      style: const TextStyle(
+                          color: primaryColor, fontWeight: FontWeight.bold),
+                    ),
+                    const Text(
+                      "Próxima ação: nenhuma rotina agendada",
+                      style: TextStyle(
+                          color: secondaryTextColor, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Estilo de input
+  InputDecoration _inputDecoration() {
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      enabledBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: borderColor),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: primaryColor),
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+  }
+
+  Widget _Label(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 5),
+        child: Text(
+          text,
+          style: const TextStyle(
+              color: secondaryTextColor, fontSize: 14, fontFamily: 'Inter'),
+        ),
+      );
+}
+
+// ---------------------- COMPONENTES REUTILIZÁVEIS ----------------------
+
+class CustomToggle extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onTap;
+  const CustomToggle({super.key, required this.isActive, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 40,
+        height: 20,
+        decoration: BoxDecoration(
+          color: isActive ? _GerenciarPageState.primaryColor : _GerenciarPageState.borderColor,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: AnimatedAlign(
+          alignment: isActive ? Alignment.centerRight : Alignment.centerLeft,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: Container(
+            width: 16,
+            height: 16,
+            margin: const EdgeInsets.symmetric(horizontal: 2),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: const [
+                BoxShadow(
+                    color: Colors.black26, blurRadius: 2, offset: Offset(0, 1))
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class RuleDetailCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  final bool isActive;
+  final VoidCallback onToggle;
+  const RuleDetailCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.isActive,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = isActive
+        ? _GerenciarPageState.primaryColor
+        : _GerenciarPageState.secondaryTextColor;
+
+    return _CardContainer(
+      marginBottom: 15,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 22),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: _GerenciarPageState.textColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              CustomToggle(isActive: isActive, onTap: onToggle),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            description,
+            style: const TextStyle(
+              color: _GerenciarPageState.secondaryTextColor,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardContainer extends StatelessWidget {
+  final Widget child;
+  final double marginBottom;
+  const _CardContainer({required this.child, this.marginBottom = 0});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: marginBottom),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: _GerenciarPageState.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+              color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+        ],
+      ),
+      child: child,
+    );
+  }
+}

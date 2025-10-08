@@ -1,178 +1,387 @@
-// >>>>>>>>>>> PAGINA EM JSX
+import 'dart:async';
+import 'package:flutter/material.dart';
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { fetchEnergia } from '../../endpoints/Api';
+/// Modelo básico para um dispositivo
+class Device {
+  final int id;
+  final String name;
+  final String room;
+  final String type;
+  bool status;
 
-const FaArrowLeft = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 12H5"></path>
-    <path d="M12 19l-7-7 7-7"></path>
-  </svg>
-);
+  Device({
+    required this.id,
+    required this.name,
+    required this.room,
+    required this.type,
+    this.status = false,
+  });
+}
 
-const FaTrash = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6"></polyline>
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-  </svg>
-);
+/// Simulação de chamada de API — substitua pela sua implementação real
+Future<Map<String, dynamic>> fetchEnergia(int dispositivoId) async {
+  await Future.delayed(const Duration(seconds: 1));
+  return {
+    'w_instantaneo': 102.45,
+    'kwh_hoje': 1.876,
+    'kwh_mes': 35.927,
+    'ligado': true,
+  };
+}
 
-export default function DetalheDispositivo({ devices, onRemoveDevice, onToggleDevice }) {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
+class DetalheDispositivo extends StatefulWidget {
+  final List<Device> devices;
+  final void Function(int id) onRemoveDevice;
+  final void Function(int id) onToggleDevice;
+  final int dispositivoId;
 
-  const [energia, setEnergia] = useState(null);
-  const [loadingEnergia, setLoadingEnergia] = useState(true);
-  const [erroEnergia, setErroEnergia] = useState(null);
+  const DetalheDispositivo({
+    super.key,
+    required this.devices,
+    required this.onRemoveDevice,
+    required this.onToggleDevice,
+    required this.dispositivoId,
+  });
 
-  const dispositivoId = Number(id);
-  const device = devices.find(d => d.id === dispositivoId);
+  @override
+  State<DetalheDispositivo> createState() => _DetalheDispositivoState();
+}
 
-  const titleColor = 'var(--cor-primaria)';
+class _DetalheDispositivoState extends State<DetalheDispositivo> {
+  Map<String, dynamic>? energia;
+  bool loadingEnergia = true;
+  String? erroEnergia;
+  bool showModal = false;
+  Timer? timer;
 
-  useEffect(() => {
-    if (!dispositivoId) return;
-    let isMounted = true;
-
-    const load = async () => {
-      try {
-        setLoadingEnergia(true);
-        setErroEnergia(null);
-        const data = await fetchEnergia(dispositivoId);
-        const snap = data?.energia ?? data;
-        if (isMounted) setEnergia(snap || null);
-      } catch (e) {
-        if (isMounted) setErroEnergia(e.message || String(e));
-      } finally {
-        if (isMounted) setLoadingEnergia(false);
-      }
-    };
-
-    load();
-    const t = setInterval(load, 5000); // recarrega a cada 5 segundos
-    return () => { isMounted = false; clearInterval(t); };
-  }, [dispositivoId]);
-
-  if (!device) {
-    return (
-      <div className="device-list-container" style={{ padding: '20px' }}>
-        Dispositivo não encontrado.
-      </div>
-    );
+  @override
+  void initState() {
+    super.initState();
+    _loadEnergia();
+    timer = Timer.periodic(const Duration(seconds: 5), (_) => _loadEnergia());
   }
 
-  const handleRemove = () => setShowModal(true);
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
 
-  // ALTERAÇÃO: ao confirmar, volta para a página anterior (navigate(-1))
-  const confirmRemove = () => {
-    onRemoveDevice(device.id);
-    setShowModal(false);
-    navigate(-1);
-  };
+  Future<void> _loadEnergia() async {
+    try {
+      setState(() {
+        loadingEnergia = true;
+        erroEnergia = null;
+      });
+      final data = await fetchEnergia(widget.dispositivoId);
+      setState(() {
+        energia = data;
+      });
+    } catch (e) {
+      setState(() {
+        erroEnergia = e.toString();
+      });
+    } finally {
+      setState(() {
+        loadingEnergia = false;
+      });
+    }
+  }
 
-  const cancelRemove = () => setShowModal(false);
+  String fmt(dynamic n, [int digits = 3]) {
+    if (n == null) return '—';
+    final num? numValue = num.tryParse(n.toString());
+    if (numValue == null) return '—';
+    return numValue.toStringAsFixed(digits);
+  }
 
-  const fmt = (n, digits = 3) => {
-    if (n === null || n === undefined) return '—';
-    const num = Number(n);
-    if (Number.isNaN(num)) return '—';
-    return num.toFixed(digits);
-  };
+  @override
+  Widget build(BuildContext context) {
+    final device = widget.devices.firstWhere(
+      (d) => d.id == widget.dispositivoId,
+      orElse: () => Device(id: -1, name: 'N/A', room: '—', type: '—'),
+    );
 
-  const watts = energia?.w_instantaneo;
-  const kwhHoje = energia?.kwh_hoje;
-  const kwhMes = energia?.kwh_mes;
-  const ligado = energia?.ligado;
+    if (device.id == -1) {
+      return Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              'Dispositivo não encontrado.',
+              style: TextStyle(color: Colors.grey[800], fontSize: 18),
+            ),
+          ),
+        ),
+      );
+    }
 
-  return (
-    <div className="device-list-container" style={{ paddingTop: '20px' }}>
-      {/* --- INJEÇÃO DE ESTILO: CORRIGE A FONTE DOS BOTÕES DO MODAL (ESTILO MÍNIMO) --- */}
-      <style jsx="true">{`
-        .add-device-button { outline: none !important; }
-        .add-device-button:focus { box-shadow: none !important; }
-      `}</style>
+    final watts = energia?['w_instantaneo'];
+    final kwhHoje = energia?['kwh_hoje'];
+    final kwhMes = energia?['kwh_mes'];
+    final ligado = energia?['ligado'];
 
-      {/* Modal de Confirmação */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Confirmar remoção</h3>
-            <p>Tem certeza que deseja remover o dispositivo "{device.name}"?</p>
-            <div className="modal-actions">
-              <button
-                onClick={confirmRemove}
-                className="add-device-button"
-                style={{ backgroundColor: 'var(--cor-primaria)', width: '48%', marginRight: '4%', fontFamily: 'Inter, sans-serif' }}
-              >
-                Remover
-              </button>
-              <button
-                onClick={cancelRemove}
-                className="add-device-button"
-                style={{ backgroundColor: '#a6a6a6', width: '48%', fontFamily: 'Inter, sans-serif' }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+    final primaryColor = Theme.of(context).primaryColor;
+    const lightText = Colors.white;
+    const darkText = Colors.black87;
 
-      {/* Topo */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-claro)', fontSize: '20px', cursor: 'pointer' }}>
-          <FaArrowLeft />
-        </button>
-        <button onClick={handleRemove} style={{ background: 'none', border: 'none', color: 'var(--cor-primaria)', fontSize: '20px', cursor: 'pointer' }}>
-          <FaTrash />
-        </button>
-      </div>
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ===== TOPO =====
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back_ios_new),
+                        color: Colors.grey[700],
+                      ),
+                      IconButton(
+                        onPressed: () => setState(() => showModal = true),
+                        icon: Icon(Icons.delete, color: primaryColor),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
 
-      <h1 style={{ fontSize: '30px', color: titleColor, marginBottom: '10px' }}>{device.name}</h1>
-      <p style={{ color: 'var(--cor-texto-escuro)', fontSize: '16px' }}>Local: {device.room} | Tipo: {device.type}</p>
+                  // ===== TÍTULO =====
+                  Text(
+                    device.name,
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'Local: ${device.room} | Tipo: ${device.type}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
-      <div className={`device-card ${device.status ? 'active' : ''}`} style={{ marginTop: '20px' }}>
-        <div className="device-info">
-          <h3 style={{ color: 'var(--cor-texto-claro)' }}>Status</h3>
-          <p style={{ color: device.status ? 'var(--cor-texto-claro)' : 'var(--cor-texto-escuro)' }}>
-            {device.status ? 'LIGADO' : 'DESLIGADO'}
-          </p>
-          {ligado !== undefined && ligado !== null && (
-            <p style={{ color: 'var(--cor-texto-claro)', marginTop: 6 }}>
-              (Tapo: {ligado ? 'Ligado' : 'Desligado'})
-            </p>
-          )}
-        </div>
+                  // ===== CARD STATUS =====
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 20),
+                    decoration: BoxDecoration(
+                      color: device.status ? primaryColor : Colors.grey[200],
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Status',
+                              style: TextStyle(
+                                color:
+                                    device.status ? lightText : Colors.black54,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              device.status ? 'LIGADO' : 'DESLIGADO',
+                              style: TextStyle(
+                                color: device.status ? lightText : darkText,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (ligado != null)
+                              Text(
+                                '(Tapo: ${ligado ? 'Ligado' : 'Desligado'})',
+                                style: const TextStyle(
+                                  color: lightText,
+                                  fontSize: 14,
+                                ),
+                              ),
+                          ],
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            widget.onToggleDevice(device.id);
+                            setState(() {});
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 55,
+                            height: 30,
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: device.status
+                                  ? Colors.green
+                                  : Colors.grey.shade400,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            alignment: device.status
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
-        <div className="device-toggle" onClick={() => onToggleDevice(device.id)}>
-          <div className="device-toggle-circle"></div>
-        </div>
-      </div>
+                  // ===== CARD CONSUMO =====
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Informações de Uso',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (loadingEnergia)
+                          const Text(
+                            'Carregando telemetria…',
+                            style: TextStyle(color: Colors.black54),
+                          ),
+                        if (erroEnergia != null && !loadingEnergia)
+                          Text(
+                            'Erro: $erroEnergia',
+                            style: TextStyle(color: primaryColor),
+                          ),
+                        if (!loadingEnergia && erroEnergia == null) ...[
+                          Text(
+                            'Potência agora: ${fmt(watts, 2)} W',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Hoje: ${fmt(kwhHoje, 3)} kWh',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Mês: ${fmt(kwhMes, 3)} kWh',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ]
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-      <div className="consumption-card" style={{ marginTop: '20px' }}>
-        <h3 className="card-label">Informações de Uso</h3>
-
-        {loadingEnergia && <p style={{ color: 'var(--cor-texto-claro)', marginTop: 10 }}>Carregando telemetria…</p>}
-        {erroEnergia && !loadingEnergia && (
-          <p style={{ color: 'var(--cor-primaria)', marginTop: 10 }}>Erro: {erroEnergia}</p>
-        )}
-
-        {!loadingEnergia && !erroEnergia && (
-          <>
-            <p style={{ color: 'var(--cor-texto-claro)', margin: '10px 0' }}>
-              <strong>Potência agora:</strong> {fmt(watts, 2)} W
-            </p>
-            <p style={{ color: 'var(--cor-texto-claro)', margin: '10px 0' }}>
-              <strong>Hoje:</strong> {fmt(kwhHoje, 3)} kWh
-            </p>
-            <p style={{ color: 'var(--cor-texto-claro)' }}>
-              <strong>Mês:</strong> {fmt(kwhMes, 3)} kWh
-            </p>
-          </>
-        )}
-      </div>
-    </div>
-  );
+            // ===== MODAL =====
+            if (showModal)
+              Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.85,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Confirmar remoção',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Tem certeza que deseja remover o dispositivo "${device.name}"?',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  widget.onRemoveDevice(device.id);
+                                  setState(() {
+                                    showModal = false;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColor,
+                                ),
+                                child: const Text('Remover'),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    showModal = false;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey,
+                                ),
+                                child: const Text('Cancelar'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }

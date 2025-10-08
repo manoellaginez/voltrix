@@ -1,255 +1,394 @@
-// >>>>>>>>>>> PAGINA EM JSX
+import 'package:flutter/material.dart';
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom'; // Importar useNavigate para a Assistente
+class GastosPage extends StatefulWidget {
+  const GastosPage({Key? key}) : super(key: key);
 
-// Ícone de Dólar ($) (Mantido, mas não usado no título)
-const FaDollarSign = ({ style = {} }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <line x1="12" y1="1" x2="12" y2="23"></line>
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-  </svg>
-);
+  @override
+  State<GastosPage> createState() => _GastosPageState();
+}
 
-// Ícone de Filtro
-const FaFilter = ({ style = {} }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-  </svg>
-);
+class _GastosPageState extends State<GastosPage> {
+  String activeFilter = 'Hoje';
 
-// Ícone de Gráfico de Linha
-const FaLineChart = ({ style = {} }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-  </svg>
-);
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).primaryColor;
+    const textColor = Colors.black;
+    const secondaryTextColor = Colors.grey;
 
-// ÍCONE DE CALENDÁRIO (Para Projeção Mensal - Movido para o topo)
-const FaCalendar = ({ style = {} }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-        <line x1="16" y1="2" x2="16" y2="6"></line>
-        <line x1="8" y1="2" x2="8" y2="6"></line>
-        <line x1="3" y1="10" x2="21" y2="10"></line>
-    </svg>
-);
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ===================== CABEÇALHO =====================
+            Text(
+              'Gastos',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
+              ),
+            ),
+            const SizedBox(height: 5),
+            const Text(
+              'Monitore seus custos de energia',
+              style: TextStyle(
+                fontSize: 17,
+                color: secondaryTextColor,
+              ),
+            ),
+            const SizedBox(height: 25),
 
-// NOVO ÍCONE: Ícone de Assistente/Bot
-const FaRobot = ({ style = {} }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-        <path d="M10 9V5a2 2 0 0 1 4 0v4"></path>
-        <path d="M15.4 15.4c.8-.8.8-2.2 0-3-.8-.8-2.2-.8-3 0-.8.8-.8 2.2 0 3z"></path>
-        <rect x="2" y="7" width="20" height="16" rx="2"></rect>
-        <path d="M6 14h12"></path>
-    </svg>
-);
+            // ===================== FILTROS =====================
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: ['Hoje', 'Semana', 'Mês'].map((filter) {
+                final bool isActive = activeFilter == filter;
+                return Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 5),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() => activeFilter = filter);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            isActive ? primaryColor : Colors.grey.shade200,
+                        foregroundColor:
+                            isActive ? Colors.white : secondaryTextColor,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: isActive ? 3 : 0,
+                      ),
+                      child: Text(
+                        filter.toUpperCase(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
 
+            const SizedBox(height: 25),
 
-// Componente principal da página de Gastos
-export default function Gastos() {
-  const navigate = useNavigate(); // Hook para navegação
+            // ===================== CARDS DE RESUMO =====================
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 2,
+              crossAxisSpacing: 15,
+              mainAxisSpacing: 15,
+              childAspectRatio: 2.3,
+              children: [
+                _ResumoCard(
+                  label: 'Gasto total',
+                  value: 'R\$ 150,50',
+                  subtext: '+4.2% no último período',
+                  subtextColor: Colors.green,
+                  icon: Icons.show_chart,
+                ),
+                _ResumoCard(
+                  label: 'Hoje',
+                  value: 'R\$ 5,30',
+                  subtext: 'Custo ideal: R\$ 6,00',
+                  subtextColor: secondaryTextColor,
+                  icon: Icons.attach_money,
+                ),
+              ],
+            ),
 
-  // Estilos CSS críticos movidos para um bloco style isolado (para dimensão)
-  const buttonStyles = `
-    /* APENAS ESTILOS PARA CORRIGIR A FONTE E REMOVER O BRILHO DO BOTÃO */
-    .filter-button {
-        font-family: 'Inter', sans-serif !important; 
-        box-shadow: none !important; 
-        outline: none !important;
-        border: none !important;
-        /* Garante que o hover/focus não adicione brilho */
-        &:focus {
-            box-shadow: none !important;
-            outline: none !important;
-        }
-    }
-    
-    .filter-button.active {
-        box-shadow: 0 4px 8px rgba(230, 0, 18, 0.3) !important;
-    }
-    
-    /* --- CORREÇÃO ADICIONADA: Forçar a fonte Inter no botão ACESSAR ASSISTENTE --- */
-    .assistant-card button {
-        font-family: 'Inter', sans-serif !important;
-    }
+            const SizedBox(height: 25),
 
-    .summary-cards-container, .additional-info-cards {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-    }
-    
-    /* Media query para adaptar o layout para uma coluna em telas pequenas */
-    @media (max-width: 640px) {
-        .summary-cards-container, .additional-info-cards {
-            grid-template-columns: 1fr; /* Volta para uma coluna em telas pequenas */
-        }
-    }
-  `;
+            // ===================== GRÁFICO =====================
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  )
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Gastos por hora',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                      Icon(Icons.filter_list, color: secondaryTextColor),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey.shade400,
+                          style: BorderStyle.solid,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.white,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            height: 5,
+                            width: MediaQuery.of(context).size.width * 0.8,
+                            decoration: BoxDecoration(
+                              color: primaryColor,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          const Text(
+                            '00:00 - 23:59',
+                            style: TextStyle(fontSize: 12, color: secondaryTextColor),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-  // Definindo as variáveis CSS para uso no estilo inline (necessário em alguns pontos)
-  const primaryColor = 'var(--cor-primaria)';
-  const textColor = 'var(--cor-texto-claro)';
-  const secondaryTextColor = 'var(--cor-texto-escuro)';
+            const SizedBox(height: 25),
 
-  // Estado (simulado) para o filtro de tempo
-  const [activeTimeFilter, setActiveTimeFilter] = React.useState('Hoje');
+            // ===================== MÉDIA SEMANAL E PROJEÇÃO =====================
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 2,
+              crossAxisSpacing: 15,
+              mainAxisSpacing: 15,
+              childAspectRatio: 2.3,
+              children: [
+                _InfoCard(
+                  label: 'Média semanal',
+                  value: 'R\$ 0,00',
+                  icon: Icons.show_chart,
+                  iconColor: Colors.green,
+                ),
+                _InfoCard(
+                  label: 'Projeção mensal',
+                  value: 'R\$ 0,00',
+                  icon: Icons.calendar_today,
+                  iconColor: secondaryTextColor,
+                ),
+              ],
+            ),
 
-  const handleTimeFilter = (filter) => {
-    setActiveTimeFilter(filter);
-  };
-    
-    // Função para navegar para a Assistente
-    const handleGoToAssistant = () => {
-        // Implementação futura da navegação para a Assistente
-        navigate('/assistente'); 
-    };
+            const SizedBox(height: 25),
 
-  return (
-    <div 
-        className="gastos-page-container" 
-        style={{ 
-            padding: '20px 15px', 
-            margin: '0 auto', 
-            backgroundColor: 'white', 
-            fontFamily: 'Inter, sans-serif' // Garante fonte no contêiner principal
-        }}
-    >
-        {/* INJEÇÃO DE ESTILO MÍNIMA: Apenas para garantir a fonte e o estilo dos botões de filtro */}
-        <style>{buttonStyles}</style>
-      {/* CABEÇALHO DA PÁGINA */}
-      <div className="page-header" style={{ paddingBottom: '15px', marginBottom: '20px' }}>
-        <h1 style={{ color: primaryColor, fontSize: '28px', margin: '0 0 5px' }}>
-                    Gastos
-        </h1>
-        <p style={{ color: secondaryTextColor, fontSize: '17px', margin: 0 }}>
-          Monitore seus custos de energia
-        </p>
-      </div>
+            // ===================== CARD ASSISTENTE =====================
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  )
+                ],
+                border: Border(
+                  top: BorderSide(color: primaryColor, width: 4),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.smart_toy, color: primaryColor, size: 28),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Fale com a Voltrix Assistente',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Quer um resumo do seu consumo no mês? A Assistente Voltrix lê e explica seus padrões de gastos.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: secondaryTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/assistente');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'ACESSAR ASSISTENTE',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-      {/* FILTRO DE TEMPO (Ajustado para ser maior e proporcional) */}
-      <div className="time-filter-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '25px' }}>
-        {['HOJE', 'SEMANA', 'MÊS'].map(filter => (
-          <button
-            key={filter}
-            className={`filter-button ${activeTimeFilter === filter ? 'active' : ''}`}
-            onClick={() => handleTimeFilter(filter)}
-            style={{ 
-              padding: '12px 0', /* Aumentado o padding vertical */
-              backgroundColor: activeTimeFilter === filter ? primaryColor : 'var(--cor-fundo-secundario)',
-              color: activeTimeFilter === filter ? 'white' : secondaryTextColor,
-                            fontSize: '16px', /* Aumentado a fonte para destaque */
-                            fontWeight: '600',
-                            borderRadius: '10px' /* Aumentado o arredondamento */
-            }}
-          >
-            {filter}
-          </button>
-        ))}
-      </div>
+// ===================== WIDGETS REUTILIZÁVEIS =====================
 
-      {/* CARDS DE RESUMO (Gastos Total e Hoje) */}
-      <div className="summary-cards-container" style={{ marginBottom: '20px' }}>
-        
-        {/* Gasto Total */}
-        <div className="summary-card" style={{ background: 'var(--cor-fundo-secundario)', padding: '15px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.05)' }}>
-          <p className="card-label" style={{ fontSize: '13px', color: secondaryTextColor, margin: '0 0 5px 0' }}>Gasto total</p>
-          <h2 className="card-value" style={{ color: textColor, fontSize: '24px', fontWeight: 'bold', margin: 0 }}>R$ 150,50</h2>
-          <p className="card-subtext" style={{ color: 'var(--cor-sucesso)', display: 'flex', alignItems: 'center', fontSize: '13px' }}>
-            <FaLineChart style={{ fontSize: '12px', marginRight: '5px', strokeWidth: 2 }} />
-            +4.2% no último período
-          </p>
-        </div>
+class _ResumoCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String subtext;
+  final Color subtextColor;
+  final IconData icon;
 
-        {/* Custo Hoje */}
-        <div className="summary-card" style={{ background: 'var(--cor-fundo-secundario)', padding: '15px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.05)' }}>
-          <p className="card-label" style={{ fontSize: '13px', color: secondaryTextColor, margin: '0 0 5px 0' }}>Hoje</p>
-          <h2 className="card-value" style={{ color: textColor, fontSize: '24px', fontWeight: 'bold', margin: 0 }}>R$ 5,30</h2>
-          <p className="card-subtext" style={{ color: secondaryTextColor, fontSize: '13px' }}>Custo ideal: R$ 6,00</p>
-        </div>
-      </div>
+  const _ResumoCard({
+    required this.label,
+    required this.value,
+    required this.subtext,
+    required this.subtextColor,
+    required this.icon,
+  });
 
-      {/* GRÁFICO (Gastos por Hora) */}
-      <div className="graph-card" style={{ marginBottom: '20px', padding: '15px', borderRadius: '12px', backgroundColor: 'var(--cor-fundo-secundario)', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.05)' }}>
-        <div className="graph-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ color: textColor, margin: 0, fontSize: '18px' }}>Gastos por hora</h3>
-          <FaFilter style={{ color: secondaryTextColor, cursor: 'pointer', width: '20px', height: '20px' }} />
-        </div>
-        {/* Use uma altura flexível (e.g., aspect-ratio) para proporção */}
-        <div className="graph-placeholder" style={{ 
-          aspectRatio: '16 / 9', /* Mantém proporção de tela */
-          width: '100%',
-          background: 'white', 
-          borderRadius: '8px', 
-          margin: '15px 0',
-          border: '1px dashed var(--cor-borda)', 
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          paddingBottom: '10px'
-        }}>
-          {/* Placeholder para a linha vermelha do gráfico - Simulando a visualização */}
-          <div style={{ 
-            height: '5px', 
-            width: '95%', 
-            backgroundColor: primaryColor, 
-            borderRadius: '3px',
-            marginBottom: '5px'
-          }}></div>
-          <p style={{ textAlign: 'center', color: secondaryTextColor, fontSize: '12px' }}>00:00 - 23:59</p>
-        </div>
-      </div>
+  @override
+  Widget build(BuildContext context) {
+    const secondaryTextColor = Colors.grey;
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, color: secondaryTextColor)),
+          const SizedBox(height: 5),
+          Text(value,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              )),
+          const SizedBox(height: 5),
+          Row(
+            children: [
+              Icon(icon, size: 14, color: subtextColor),
+              const SizedBox(width: 5),
+              Text(
+                subtext,
+                style: TextStyle(fontSize: 13, color: subtextColor),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+}
 
-      {/* INFORMAÇÕES ADICIONAIS (Média e Projeção) */}
-      <div className="additional-info-cards" style={{ marginBottom: '20px' }}>
-        {/* Média Semanal */}
-        <div className="info-card" style={{ background: 'var(--cor-fundo-secundario)', padding: '15px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.05)' }}>
-          <p className="card-label" style={{ fontSize: '13px', color: secondaryTextColor, margin: '0 0 5px 0' }}>Média semanal</p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="card-value" style={{ color: textColor, margin: 0, fontSize: '24px', fontWeight: 'bold' }}>R$ 0,00</h2>
-            <FaLineChart style={{ color: 'var(--cor-sucesso)', width: '24px', height: '24px' }} />
-          </div>
-        </div>
+class _InfoCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color iconColor;
 
-        {/* Projeção Mensal */}
-        <div className="info-card" style={{ background: 'var(--cor-fundo-secundario)', padding: '15px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.05)' }}>
-          <p className="card-label" style={{ fontSize: '13px', color: secondaryTextColor, margin: '0 0 5px 0' }}>Projeção mensal</p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="card-value" style={{ color: textColor, margin: 0, fontSize: '24px', fontWeight: 'bold' }}>R$ 0,00</h2>
-            {/* Ícone de Calendário - Agora usando o componente definido no topo */}
-            <FaCalendar style={{ color: secondaryTextColor }} />
-          </div>
-        </div>
-      </div>
+  const _InfoCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.iconColor,
+  });
 
-            {/* CARD DA ASSISTENTE (No final) */}
-            <div className="info-card assistant-card" style={{ background: 'var(--cor-fundo-secundario)', padding: '15px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.05)', borderTop: '4px solid var(--cor-primaria)', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                    <FaRobot style={{ color: primaryColor, marginRight: '10px', width: '28px', height: '28px' }} />
-                    <h3 style={{ color: textColor, margin: 0, fontSize: '18px' }}>Fale com a Voltrix Assistente</h3>
-                </div>
-                <p style={{ color: secondaryTextColor, fontSize: '14px', marginBottom: '15px' }}>
-                    Quer um resumo do seu consumo no mês? A Assistente Voltrix lê e explica seus padrões de gastos.
-                </p>
-                <button 
-                    onClick={handleGoToAssistant}
-                    style={{
-                        backgroundColor: primaryColor,
-                        color: 'white',
-                        padding: '10px 15px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        width: '100%',
-                        transition: 'background-color 0.3s'
-                    }}
-                >
-                    ACESSAR ASSISTENTE
-                </button>
-            </div>
-    </div>
-  );
+  @override
+  Widget build(BuildContext context) {
+    const secondaryTextColor = Colors.grey;
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, color: secondaryTextColor)),
+          const SizedBox(height: 5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              Icon(icon, size: 24, color: iconColor),
+            ],
+          )
+        ],
+      ),
+    );
+  }
 }

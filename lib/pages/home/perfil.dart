@@ -1,295 +1,412 @@
-// >>>>>>>>>>> PAGINA EM JSX
+// >>>>>>>>>>> PAGINA EM FLUTTER
 
-import React, { useState, useEffect, useCallback } from 'react';
+import 'package:flutter/material.dart';
+import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 
-// --- Ícones ---
-const FaUser = ({ size = 24, color = 'currentColor', style = {} }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-);
+class PerfilPage extends StatefulWidget {
+  const PerfilPage({super.key});
 
-const FaEdit = ({ size = 18, color = 'currentColor', style = {} }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-    </svg>
-);
+  @override
+  State<PerfilPage> createState() => _PerfilPageState();
+}
 
-const FaChevronRight = ({ size = 20, color = 'currentColor', style = {} }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-        <polyline points="9 18 15 12 9 6"></polyline>
-    </svg>
-);
+class _PerfilPageState extends State<PerfilPage> {
+  // Cores principais
+  final String PRIMARY_RED = '#B42222';
+  final String BORDER_COLOR = '#E0E0E0';
+  final String MAIN_TEXT_COLOR_REQUESTED = '#A6A6A6';
 
-const FaZap = ({ size = 20, color = 'currentColor', style = {} }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-    </svg>
-);
+  // Controle de tema
+  String theme = 'Claro';
 
-const FaTarget = ({ size = 20, color = 'currentColor', style = {} }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-        <circle cx="12" cy="12" r="10"></circle>
-        <circle cx="12" cy="12" r="6"></circle>
-        <circle cx="12" cy="12" r="2"></circle>
-    </svg>
-);
-
-// Componente para um Item de Configuração (reutilizável)
-const ActionItem = ({ icon: Icon, title, description, action, primaryColor, cardBackground, textColor, secondaryTextColor, borderColor, isLast = false }) => {
-    return (
-        <div 
-            onClick={action} 
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '12px 0',
-                cursor: 'pointer', 
-                borderBottom: isLast ? 'none' : `1px solid ${borderColor}`,
-                transition: 'background-color 0.1s',
-            }}
-            onMouseOver={e => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.03)'}
-            onMouseOut={e => e.currentTarget.style.backgroundColor = cardBackground}
-        >
-            <Icon size={20} color={primaryColor} style={{ marginRight: '15px' }} />
-            <div style={{ flexGrow: 1 }}>
-                <p style={{ margin: 0, fontWeight: 'bold', color: textColor, fontSize: '15px' }}>{title}</p>
-                {description && <p style={{ margin: 0, color: secondaryTextColor, fontSize: '12px', marginTop: '2px' }}>{description}</p>}
-            </div>
-            <FaChevronRight size={16} color={secondaryTextColor} />
-        </div>
-    );
-};
-
-// Componente Principal da Tela de Perfil
-export default function Perfil() {
-    // Cores fixas e primárias
-    const PRIMARY_RED = '#B42222'; 
-    const BORDER_COLOR = '#E0E0E0';
-    const MAIN_TEXT_COLOR_REQUESTED = '#A6A6A6'; 
-
-    // --- Lógica de Tema ---
-    // Simulamos um tema para o Perfil, mas as opções de troca ficam no 'Mais'
-    const [theme, setTheme] = useState('Claro'); 
-
-    // Mapeamento de cores baseado no tema
-    const themeStyles = {
-        'Claro': {
-            pageBackground: '#FFFFFF', 
-            cardBackground: '#F6F6F6', 
-            textColor: MAIN_TEXT_COLOR_REQUESTED, 
-            secondaryTextColor: MAIN_TEXT_COLOR_REQUESTED, 
-            reverseTextColor: '#FFFFFF',
-            borderColor: BORDER_COLOR,
-        },
-        'Escuro': {
-            pageBackground: '#1C1C1E', 
-            cardBackground: '#2C2C2E', 
-            textColor: '#FFFFFF', 
-            secondaryTextColor: '#B0B0B0', 
-            reverseTextColor: '#000000',
-            borderColor: '#38383A',
-        }
+  Map<String, Map<String, Color>> get themeStyles {
+    return {
+      'Claro': {
+        'pageBackground': Colors.white,
+        'cardBackground': const Color(0xFFF6F6F6),
+        'textColor': const Color(0xFFA6A6A6),
+        'secondaryTextColor': const Color(0xFFA6A6A6),
+        'reverseTextColor': Colors.white,
+        'borderColor': const Color(0xFFE0E0E0),
+      },
+      'Escuro': {
+        'pageBackground': const Color(0xFF1C1C1E),
+        'cardBackground': const Color(0xFF2C2C2E),
+        'textColor': Colors.white,
+        'secondaryTextColor': Color(0xFFB0B0B0),
+        'reverseTextColor': Colors.black,
+        'borderColor': Color(0xFF38383A),
+      }
     };
+  }
 
-    const currentTheme = themeStyles[theme];
+  // Dados de exemplo
+  final String userName = "Manoella Ginez";
+  final String userEmail = "ginez.mano@gmail.com";
+  final String status = "CONTA ATIVA";
 
-    const { 
-        pageBackground, 
-        cardBackground, 
-        textColor, 
-        secondaryTextColor, 
-        borderColor 
-    } = currentTheme;
+  @override
+  Widget build(BuildContext context) {
+    final currentTheme = themeStyles[theme]!;
+    final pageBackground = currentTheme['pageBackground']!;
+    final cardBackground = currentTheme['cardBackground']!;
+    final textColor = currentTheme['textColor']!;
+    final secondaryTextColor = currentTheme['secondaryTextColor']!;
+    final borderColor = currentTheme['borderColor']!;
+    final reverseTextColor = currentTheme['reverseTextColor']!;
+    final primaryRed = Color(0xFFB42222);
 
-    // Aplicar a cor de fundo da página ao body
-    useEffect(() => {
-        document.body.style.backgroundColor = pageBackground;
-        return () => {
-            document.body.style.backgroundColor = ''; 
-        };
-    }, [pageBackground]);
+    return Scaffold(
+      backgroundColor: pageBackground,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 450),
+            margin: const EdgeInsets.symmetric(horizontal: 0),
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // CABEÇALHO
+                Padding(
+                  padding: const EdgeInsets.only(top: 20, bottom: 15),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Perfil',
+                        style: TextStyle(
+                          color: primaryRed,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Seu espaço pessoal e dados de consumo',
+                        style: TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: 17,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-    // Dados de exemplo
-    const userName = "Manoella Ginez";
-    const userEmail = "ginez.mano@gmail.com";
-    const status = "CONTA ATIVA";
+                // CARTÃO DE INFORMAÇÕES DO USUÁRIO
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Colors.black12, blurRadius: 5, offset: Offset(0, 2))
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: pageBackground,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              FeatherIcons.user,
+                              color: primaryRed,
+                              size: 30,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              debugPrint('Editar Perfil');
+                            },
+                            child: Icon(
+                              FeatherIcons.edit2,
+                              color: secondaryTextColor,
+                              size: 20,
+                            ),
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      Text(
+                        userName,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        userEmail,
+                        style: TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: 14,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: primaryRed,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          status,
+                          style: TextStyle(
+                            color: theme == 'Claro'
+                                ? Colors.white
+                                : Colors.black,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
 
-    return (
-        <div className="perfil-page-container" style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            minHeight: '100vh', 
-            maxWidth: '450px',
-            margin: '0 auto',
-            backgroundColor: pageBackground,
-            color: secondaryTextColor, 
-            overflowY: 'auto', 
-            transition: 'background-color 0.3s'
-        }}>
-            <style>
-                {`
-                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-                    
-                    body, html, #root {
-                        font-family: 'Inter', sans-serif;
-                        height: 100%;
-                        margin: 0;
-                        padding: 0;
-                    }
-                `}
-            </style>
+                // ESTATÍSTICAS DE USO
+                Text(
+                  'Estatísticas de uso',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Colors.black12, blurRadius: 5, offset: Offset(0, 2))
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  child: Wrap(
+                    spacing: 10,
+                    runSpacing: 15,
+                    alignment: WrapAlignment.spaceBetween,
+                    children: [
+                      _statItem('25', 'Dias de uso', textColor, secondaryTextColor),
+                      _statItem('12', 'Dispositivos', textColor, secondaryTextColor),
+                      _statItem('R\$ 87,50', 'Economia total', textColor, secondaryTextColor),
+                      _statItem('15%', 'Redução consumo', textColor, secondaryTextColor),
+                    ],
+                  ),
+                ),
 
-            {/* CABEÇALHO */}
-            <div className="page-header" style={{ padding: '20px 15px 15px', backgroundColor: pageBackground }}>
-                <h1 style={{ 
-                    color: PRIMARY_RED, 
-                    fontSize: '28px', 
-                    margin: '0', 
-                    textAlign: 'left' 
-                }}>
-                    Perfil
-                </h1>
-                <p style={{ color: secondaryTextColor, fontSize: '17px', margin: '5px 0 0', textAlign: 'left' }}>
-                    Seu espaço pessoal e dados de consumo
-                </p>
-            </div>
+                // AÇÕES DE ENERGIA
+                Text(
+                  'Ações de energia',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Colors.black12, blurRadius: 5, offset: Offset(0, 2))
+                    ],
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  child: Column(
+                    children: [
+                      _actionItem(
+                        icon: FeatherIcons.zap,
+                        title: 'Meus dispositivos',
+                        description: 'Gerencie os aparelhos conectados',
+                        onTap: () => debugPrint('Abrir Meus Dispositivos'),
+                        borderColor: borderColor,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor,
+                        primaryRed: primaryRed,
+                        isLast: false,
+                      ),
+                      _actionItem(
+                        icon: FeatherIcons.target,
+                        title: 'Metas de economia',
+                        description: 'Defina e acompanhe seus objetivos',
+                        onTap: () => debugPrint('Abrir Metas de Economia'),
+                        borderColor: borderColor,
+                        textColor: textColor,
+                        secondaryTextColor: secondaryTextColor,
+                        primaryRed: primaryRed,
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+                ),
 
-            {/* CONTEÚDO PRINCIPAL COM PADDING HORIZONTAL */}
-            <div style={{ padding: '0 15px', flexGrow: 1 }}>
+                // BOTÃO SAIR
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => debugPrint('Sair da Conta'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryRed,
+                      foregroundColor: reverseTextColor,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      shadowColor: Colors.black12,
+                      elevation: 2,
+                    ),
+                    child: const Text(
+                      'SAIR DA CONTA',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
 
-                {/* 1. CARTÃO DE INFORMAÇÕES DO USUÁRIO */}
-                <div style={{
-                    backgroundColor: cardBackground, 
-                    borderRadius: '12px',
-                    padding: '20px',
-                    marginBottom: '20px',
-                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)',
-                    transition: 'background-color 0.3s'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
-                        <div style={{ 
-                            width: '50px', 
-                            height: '50px', 
-                            borderRadius: '50%', 
-                            backgroundColor: pageBackground, 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            transition: 'background-color 0.3s'
-                        }}>
-                            <FaUser size={30} color={PRIMARY_RED} />
-                        </div>
-                        <FaEdit color={secondaryTextColor} style={{ cursor: 'pointer' }} onClick={() => console.log('Editar Perfil')} />
-                    </div>
-                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: textColor }}>{userName}</p>
-                    <p style={{ margin: '3px 0', fontSize: '14px', color: secondaryTextColor }}>{userEmail}</p>
-                    <span style={{ 
-                        display: 'inline-block', 
-                        padding: '3px 8px', 
-                        borderRadius: '5px', 
-                        fontSize: '11px', 
-                        fontWeight: 'bold',
-                        color: theme === 'Claro' ? '#FFFFFF' : '#000000', 
-                        backgroundColor: PRIMARY_RED,
-                        marginTop: '10px'
-                    }}>{status}</span>
-                </div>
-
-                {/* 2. CARTÃO DE ESTATÍSTICAS DE USO */}
-                <h3 style={{ color: textColor, fontSize: '16px', margin: '0 0 10px', textAlign: 'left' }}>Estatísticas de uso</h3>
-                <div style={{
-                    backgroundColor: cardBackground, 
-                    borderRadius: '12px',
-                    padding: '20px',
-                    marginBottom: '20px',
-                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)',
-                    transition: 'background-color 0.3s'
-                }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                        
-                        <div style={{ width: '45%', textAlign: 'center', marginBottom: '15px' }}>
-                            <p style={{ margin: '0 0 5px', fontSize: '24px', fontWeight: 'bold', color: textColor }}>25</p>
-                            <p style={{ margin: 0, fontSize: '12px', color: secondaryTextColor }}>Dias de uso</p>
-                        </div>
-
-                        <div style={{ width: '45%', textAlign: 'center', marginBottom: '15px' }}>
-                            <p style={{ margin: '0 0 5px', fontSize: '24px', fontWeight: 'bold', color: textColor }}>12</p>
-                            <p style={{ margin: 0, fontSize: '12px', color: secondaryTextColor }}>Dispositivos</p>
-                        </div>
-                        
-                        <div style={{ width: '45%', textAlign: 'center' }}>
-                            <p style={{ margin: '0 0 5px', fontSize: '24px', fontWeight: 'bold', color: textColor }}>R$ 87,50</p>
-                            <p style={{ margin: 0, fontSize: '12px', color: secondaryTextColor }}>Economia total</p>
-                        </div>
-                        
-                        <div style={{ width: '45%', textAlign: 'center' }}>
-                            <p style={{ margin: '0 0 5px', fontSize: '24px', fontWeight: 'bold', color: textColor }}>15%</p>
-                            <p style={{ margin: 0, fontSize: '12px', color: secondaryTextColor }}>Redução consumo</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 3. AÇÕES RÁPIDAS (Novo) */}
-                <h3 style={{ color: textColor, fontSize: '16px', margin: '0 0 10px', textAlign: 'left' }}>Ações de energia</h3>
-                <div style={{
-                    backgroundColor: cardBackground, 
-                    borderRadius: '12px',
-                    padding: '0 20px',
-                    marginBottom: '20px',
-                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)',
-                    transition: 'background-color 0.3s'
-                }}>
-                    <ActionItem 
-                        icon={FaZap} 
-                        title="Meus dispositivos" 
-                        description="Gerencie os aparelhos conectados" 
-                        action={() => console.log('Abrir Meus Dispositivos')} 
-                        primaryColor={PRIMARY_RED} cardBackground={cardBackground} textColor={textColor} secondaryTextColor={secondaryTextColor} borderColor={borderColor}
-                    />
-                    <ActionItem 
-                        icon={FaTarget} 
-                        title="Metas de economia" 
-                        description="Defina e acompanhe seus objetivos" 
-                        action={() => console.log('Abrir Metas de Economia')} 
-                        isLast={true}
-                        primaryColor={PRIMARY_RED} cardBackground={cardBackground} textColor={textColor} secondaryTextColor={secondaryTextColor} borderColor={borderColor}
-                    />
-                </div>
-
-                {/* 4. BOTÃO DE SAIR E RODAPÉ */}
-                <button
-                    onClick={() => console.log('Sair da Conta')}
-                    style={{
-                        fontFamily: 'Inter, sans-serif', 
-                        width: '100%',
-                        padding: '15px',
-                        borderRadius: '12px',
-                        border: 'none',
-                        backgroundColor: PRIMARY_RED, 
-                        color: currentTheme.reverseTextColor, 
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center', 
-                        transition: 'background-color 0.2s, color 0.3s',
-                        marginBottom: '30px',
-                        boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)'
-                    }}
-                    onMouseOver={e => e.currentTarget.style.backgroundColor = '#B3000E'}
-                    onMouseOut={e => e.currentTarget.style.backgroundColor = PRIMARY_RED}
-                >
-                    SAIR DA CONTA
-                </button>
-
-                <div style={{ textAlign: 'center', color: secondaryTextColor, fontSize: '12px', marginBottom: '20px', paddingBottom: '50px' }}>
-                    <p style={{ margin: '5px 0' }}>© 2025 Voltrix. Todos os direitos reservados.</p>
-                </div>
-
-            </div>
-        </div>
+                // RODAPÉ
+                Center(
+                  child: Text(
+                    '© 2025 Voltrix. Todos os direitos reservados.',
+                    style: TextStyle(
+                      color: secondaryTextColor,
+                      fontSize: 12,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 50),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
+  }
+
+  Widget _statItem(
+      String value, String label, Color textColor, Color secondaryTextColor) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.4 - 15,
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Inter',
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 12,
+              fontFamily: 'Inter',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionItem({
+    required IconData icon,
+    required String title,
+    String? description,
+    required VoidCallback onTap,
+    required Color borderColor,
+    required Color textColor,
+    required Color secondaryTextColor,
+    required Color primaryRed,
+    required bool isLast,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: isLast
+              ? null
+              : Border(
+                  bottom: BorderSide(color: borderColor, width: 1),
+                ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: primaryRed, size: 20),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                  if (description != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        description,
+                        style: TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: 12,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Icon(
+              FeatherIcons.chevronRight,
+              color: secondaryTextColor,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
