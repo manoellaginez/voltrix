@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:voltrix/theme/theme_notifier.dart'; // Import do Notifier
+import 'package:voltrix/theme/app_gradients.dart'; // Import das constantes
 
 // Simulação de chamada de API — substitua pela sua implementação real
 Future<Map<String, dynamic>> fetchEnergia(String id) async {
@@ -26,6 +29,9 @@ class _DetalhePainelSolarState extends State<DetalhePainelSolar> {
   String? erroEnergia;
   bool inicializadoLigado = false;
   Timer? timer;
+
+  // Cor primária estática
+  final Color primaryColor = kPrimaryRed;
 
   @override
   void initState() {
@@ -76,195 +82,211 @@ class _DetalhePainelSolarState extends State<DetalhePainelSolar> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Acessa o tema global e as cores dinâmicas
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.isDarkMode;
+    final colors = getThemeStyles(isDarkMode);
+
+    final textColor = colors['textColor']!;
+    final secondaryTextColor = colors['secondaryTextColor']!;
+    final cardBackground = colors['cardBackground']!;
+    final inactiveCardColor = isDarkMode ? colors['borderColor'] : Colors.grey.shade200;
+    
+    // Cores fixas (ajustadas para o contexto)
+    const lightText = Colors.white; 
+
     final watts = energia?['w_instantaneo'];
     final kwhHoje = energia?['kwh_hoje'];
     final kwhMes = energia?['kwh_mes'];
 
-    final primaryColor = Theme.of(context).primaryColor;
-    const lightText = Colors.white;
-    const darkText = Colors.black87;
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ========= BOTÃO VOLTAR =========
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 22),
-                    color: Colors.grey[700],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // ========= TÍTULO =========
-              Text(
-                'Painel solar',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
-                ),
-              ),
-              const SizedBox(height: 5),
-              const Text(
-                'Configuração e monitoramento do seu painel',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // ========= CARD STATUS =========
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                decoration: BoxDecoration(
-                  color: ligado ? primaryColor : Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    )
-                  ],
-                ),
-                child: Row(
+      // 2. Aplicando o Gradiente Dinâmico na raiz
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: themeNotifier.currentGradient,
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ========= BOTÃO VOLTAR =========
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Status',
-                          style: TextStyle(
-                            color: ligado ? lightText : Colors.black54,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back_ios_new, size: 22),
+                      color: secondaryTextColor, // Cor dinâmica
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                // ========= TÍTULO =========
+                Text(
+                  'Painel solar',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Configuração e monitoramento do seu painel',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: secondaryTextColor, // Cor dinâmica
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // ========= CARD STATUS =========
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  decoration: BoxDecoration(
+                    // Cor do card: Vermelho Ativo / Cinza/Borda Inativo
+                    color: ligado ? primaryColor : inactiveCardColor,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.12),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Status',
+                            style: TextStyle(
+                              color: ligado ? lightText : secondaryTextColor, // Cor dinâmica
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            ligado ? 'LIGADO' : 'DESLIGADO',
+                            style: TextStyle(
+                              color: ligado ? lightText : textColor, // Cor dinâmica
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // SWITCH personalizado
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            ligado = !ligado;
+                          });
+                          // Lógica de controle do painel aqui
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 55,
+                          height: 30,
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: ligado ? Colors.green : Colors.grey.shade400,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          alignment:
+                              ligado ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 5),
+                      )
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // ========= CARD CONSUMO =========
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  decoration: BoxDecoration(
+                    color: cardBackground, // Cor de fundo dinâmica
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.12),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Informações de uso',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: textColor, // Cor dinâmica
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      if (loadingEnergia)
                         Text(
-                          ligado ? 'LIGADO' : 'DESLIGADO',
+                          'Carregando telemetria…',
+                          style: TextStyle(color: secondaryTextColor), // Cor dinâmica
+                        ),
+                      if (erroEnergia != null && !loadingEnergia)
+                        Text(
+                          'Erro: $erroEnergia',
+                          style: TextStyle(color: primaryColor),
+                        ),
+                      if (!loadingEnergia && erroEnergia == null) ...[
+                        Text(
+                          'Potência agora: ${fmt(watts, 2)} W',
                           style: TextStyle(
-                            color: ligado ? lightText : darkText,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: textColor, // Cor dinâmica
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Hoje: ${fmt(kwhHoje, 3)} kWh',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: textColor, // Cor dinâmica
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Mês: ${fmt(kwhMes, 3)} kWh',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: textColor, // Cor dinâmica
                           ),
                         ),
                       ],
-                    ),
-
-                    // SWITCH personalizado
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          ligado = !ligado;
-                        });
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 55,
-                        height: 30,
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          color: ligado ? Colors.green : Colors.grey.shade400,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        alignment:
-                            ligado ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ========= CARD CONSUMO =========
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    )
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Informações de uso',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    if (loadingEnergia)
-                      const Text(
-                        'Carregando telemetria…',
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                    if (erroEnergia != null && !loadingEnergia)
-                      Text(
-                        'Erro: $erroEnergia',
-                        style: TextStyle(color: primaryColor),
-                      ),
-                    if (!loadingEnergia && erroEnergia == null) ...[
-                      Text(
-                        'Potência agora: ${fmt(watts, 2)} W',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Hoje: ${fmt(kwhHoje, 3)} kWh',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Mês: ${fmt(kwhMes, 3)} kWh',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

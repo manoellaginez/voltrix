@@ -5,7 +5,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.2
+  sdk: '>=3.9.2 <4.0.0'
 
 dependencies:
   flutter:
@@ -16,15 +16,19 @@ dependencies:
   google_fonts: ^6.3.2
   flutter_feather_icons: ^2.0.0 
   feather_icons: ^1.2.0
+  flutter_svg: ^2.0.9 
+  # === NOVO: Adicione 'provider' para Gerenciamento de Estado Global ===
+  provider: ^6.1.2 
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
 
-  # Exemplo de onde colocar assets no futuro:
-  # assets:
-  #   - images/
+  assets:
+    - assets/

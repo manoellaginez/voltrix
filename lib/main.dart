@@ -8,9 +8,17 @@ import 'package:voltrix/pages/home/mais.dart';
 import 'package:voltrix/pages/auth/cadastro.dart';
 import 'package:voltrix/pages/auth/entre.dart';
 import 'package:voltrix/widgets/navbar.dart';
+import 'package:provider/provider.dart'; 
+import 'package:voltrix/theme/theme_notifier.dart'; 
 
 void main() {
-  runApp(const VoltrixApp());
+  runApp(
+    // Envolve todo o aplicativo com o ThemeNotifier
+    ChangeNotifierProvider(
+      create: (context) => ThemeNotifier(),
+      child: const VoltrixApp(),
+    ),
+  );
 }
 
 class VoltrixApp extends StatelessWidget {
@@ -18,6 +26,12 @@ class VoltrixApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Inicializa o tema do sistema na primeira construção
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final platformBrightness = MediaQuery.of(context).platformBrightness;
+      Provider.of<ThemeNotifier>(context, listen: false).initializeTheme(platformBrightness);
+    });
+
     return MaterialApp(
       title: 'voltrix',
       debugShowCheckedModeBanner: false,
@@ -35,15 +49,15 @@ class VoltrixApp extends StatelessWidget {
         '/entre': (_) => const EntrePage(),
         '/cadastro': (_) => const CadastroPage(),
 
-        // Todas essas rotas internas passam pelo AppScaffold (mantém navbar)
+        // Rotas que usam o AppScaffold
         '/assistente': (_) => const AppScaffold(page: AssistentePage(), selectedIndex: 0),
         '/gastos': (_) => const AppScaffold(page: GastosPage(), selectedIndex: 1),
         '/inicio': (_) => const AppScaffold(page: InicioPage(), selectedIndex: 2),
         '/perfil': (_) => const AppScaffold(page: PerfilPage(), selectedIndex: 3),
         '/mais': (_) => const AppScaffold(page: MaisPage(), selectedIndex: 4),
 
-        // rota de adicionar dispositivo (exemplo)
-        '/adicionardispositivo': (_) => const AppScaffold(page: AdicionarDispositivoPage(), selectedIndex: 0),
+        // rota de adicionar dispositivo (sem Navbar)
+        '/adicionardispositivo': (_) => const AdicionarDispositivoPage(),
       },
 
       onUnknownRoute: (_) => MaterialPageRoute(builder: (_) => const EntrePage()),
@@ -85,23 +99,25 @@ class _AppScaffoldState extends State<AppScaffold> {
   }
 
   void _onItemTapped(int index) {
-    // evita navegar para a mesma rota repetidamente
     final current = ModalRoute.of(context)?.settings.name;
     final target = (index >= 0 && index < _routes.length) ? _routes[index] : null;
     if (target == null) return;
 
     if (current == target) {
-      setState(() => _selectedIndex = index); // apenas atualiza seleção visual
+      setState(() => _selectedIndex = index); 
       return;
     }
 
-    // substitui a rota atual pela nova (mantém a AppScaffold)
+    // Navega para a nova rota
     Navigator.pushReplacementNamed(context, target);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Usar o Consumer aqui garante que o Navbar, se precisar de cor dinâmica,
+    // possa se adaptar. Por enquanto, mantemos transparente.
     return Scaffold(
+      backgroundColor: Colors.transparent, 
       body: widget.page,
       bottomNavigationBar: Navbar(
         selectedIndex: _selectedIndex,

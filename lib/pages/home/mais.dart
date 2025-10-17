@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
+import 'package:provider/provider.dart';
+import 'package:voltrix/theme/theme_notifier.dart'; 
+import 'package:voltrix/theme/app_gradients.dart'; 
 
 class MaisPage extends StatefulWidget {
   const MaisPage({super.key});
@@ -9,242 +12,228 @@ class MaisPage extends StatefulWidget {
 }
 
 class _MaisPageState extends State<MaisPage> {
-  // Cores fixas
-  static const PRIMARY_RED = Color(0xFFB42222);
-  static const BORDER_COLOR = Color(0xFFE0E0E0);
-  static const MAIN_TEXT_COLOR_REQUESTED = Color(0xFFA6A6A6);
-
-  String theme = 'Claro';
+  // Cores fixas (referenciam as constantes importadas)
+  static const Color PRIMARY_RED = kPrimaryRed; 
   bool isNotificationToggled = true;
-
-  // Estilos de tema
-  Map<String, Map<String, Color>> get themeStyles => {
-        'Claro': {
-          'pageBackground': Colors.white,
-          'cardBackground': const Color(0xFFF6F6F6),
-          'textColor': MAIN_TEXT_COLOR_REQUESTED,
-          'secondaryTextColor': MAIN_TEXT_COLOR_REQUESTED,
-          'borderColor': BORDER_COLOR,
-        },
-        'Escuro': {
-          'pageBackground': const Color(0xFF1C1C1E),
-          'cardBackground': const Color(0xFF2C2C2E),
-          'textColor': Colors.white,
-          'secondaryTextColor': Color(0xFFB0B0B0),
-          'borderColor': Color(0xFF38383A),
-        },
-      };
-
-  void toggleTheme() {
-    setState(() {
-      theme = theme == 'Claro' ? 'Escuro' : 'Claro';
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    final colors = themeStyles[theme]!;
-    final pageBackground = colors['pageBackground']!;
+    // 1. Acessa o estado global do tema
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.isDarkMode;
+    final currentThemeName = isDarkMode ? 'Escuro' : 'Claro';
+
+    // 2. Obtém as cores dinâmicas usando a função global
+    final colors = getThemeStyles(isDarkMode);
+        
     final cardBackground = colors['cardBackground']!;
     final textColor = colors['textColor']!;
     final secondaryTextColor = colors['secondaryTextColor']!;
     final borderColor = colors['borderColor']!;
 
+    // 3. Determina o gradiente atual
+    final LinearGradient currentGradient = themeNotifier.currentGradient;
+    
     return Scaffold(
-      backgroundColor: pageBackground,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Cabeçalho
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      // Fundo será o Container no body
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: currentGradient,
+        ),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 450),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Cabeçalho
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Mais",
+                            style: TextStyle(
+                              color: PRIMARY_RED,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            "Ajustes do aplicativo, ajuda e informações",
+                            style: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 17,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Seção: Configurações
+                    _SectionTitle(title: "Configurações", color: textColor),
+                    _CardSection(
+                      backgroundColor: cardBackground,
                       children: [
-                        Text(
-                          "Mais",
-                          style: TextStyle(
-                            color: PRIMARY_RED,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        ConfigItem(
+                          icon: FeatherIcons.user,
+                          title: "Detalhes da conta",
+                          description: "Gerencie nome, e-mail e senha",
+                          onTap: () => print('Abrir Detalhes da Conta'),
+                          primaryColor: PRIMARY_RED,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          borderColor: borderColor,
                         ),
-                        const SizedBox(height: 5),
-                        Text(
-                          "Ajustes do aplicativo, ajuda e informações",
-                          style: TextStyle(
-                            color: secondaryTextColor,
-                            fontSize: 17,
-                          ),
+                        ConfigItem(
+                          icon: FeatherIcons.shield,
+                          title: "Privacidade e segurança",
+                          description: "Configurações de segurança e dados",
+                          onTap: () => print('Abrir Privacidade'),
+                          primaryColor: PRIMARY_RED,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          borderColor: borderColor,
+                        ),
+                        ConfigItem(
+                          icon: FeatherIcons.bell,
+                          title: "Notificações",
+                          description: "Ligar/Desligar alertas do sistema",
+                          isToggle: true,
+                          toggled: isNotificationToggled,
+                          onToggle: (value) {
+                            setState(() {
+                              isNotificationToggled = value;
+                            });
+                          },
+                          primaryColor: PRIMARY_RED,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          borderColor: borderColor,
+                        ),
+                        ConfigItem(
+                          icon: FeatherIcons.moon,
+                          title: "Tema",
+                          description: "Tema atual: $currentThemeName",
+                          isToggle: true,
+                          toggled: isDarkMode, 
+                          onToggle: (val) => themeNotifier.toggleTheme(), 
+                          primaryColor: PRIMARY_RED,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          borderColor: borderColor,
+                        ),
+                        ConfigItem(
+                          icon: FeatherIcons.globe,
+                          title: "Idioma",
+                          description: "Português (Brasil)",
+                          onTap: () => print('Mudar Idioma'),
+                          isLast: true,
+                          primaryColor: PRIMARY_RED,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          borderColor: borderColor,
                         ),
                       ],
                     ),
-                  ),
 
-                  // Seção: Configurações
-                  _SectionTitle(title: "Configurações", color: textColor),
-                  _CardSection(
-                    backgroundColor: cardBackground,
-                    children: [
-                      ConfigItem(
-                        icon: FeatherIcons.user,
-                        title: "Detalhes da conta",
-                        description: "Gerencie nome, e-mail e senha",
-                        onTap: () => print('Abrir Detalhes da Conta'),
-                        primaryColor: PRIMARY_RED,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        borderColor: borderColor,
-                      ),
-                      ConfigItem(
-                        icon: FeatherIcons.shield,
-                        title: "Privacidade e segurança",
-                        description: "Configurações de segurança e dados",
-                        onTap: () => print('Abrir Privacidade'),
-                        primaryColor: PRIMARY_RED,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        borderColor: borderColor,
-                      ),
-                      ConfigItem(
-                        icon: FeatherIcons.bell,
-                        title: "Notificações",
-                        description: "Ligar/Desligar alertas do sistema",
-                        isToggle: true,
-                        toggled: isNotificationToggled,
-                        onToggle: (value) {
-                          setState(() {
-                            isNotificationToggled = value;
-                          });
-                        },
-                        primaryColor: PRIMARY_RED,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        borderColor: borderColor,
-                      ),
-                      ConfigItem(
-                        icon: FeatherIcons.moon,
-                        title: "Tema",
-                        description: "Tema atual: $theme",
-                        isToggle: true,
-                        toggled: theme == 'Escuro',
-                        onToggle: (val) => toggleTheme(),
-                        primaryColor: PRIMARY_RED,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        borderColor: borderColor,
-                      ),
-                      ConfigItem(
-                        icon: FeatherIcons.globe,
-                        title: "Idioma",
-                        description: "Português (Brasil)",
-                        onTap: () => print('Mudar Idioma'),
-                        isLast: true,
-                        primaryColor: PRIMARY_RED,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        borderColor: borderColor,
-                      ),
-                    ],
-                  ),
-
-                  // Seção: Ajuda
-                  _SectionTitle(title: "Ajuda", color: textColor),
-                  _CardSection(
-                    backgroundColor: cardBackground,
-                    children: [
-                      ConfigItem(
-                        icon: FeatherIcons.helpCircle,
-                        title: "Central de ajuda",
-                        description: "Dúvidas frequentes e contato com suporte",
-                        onTap: () => print('Abrir Central de Ajuda'),
-                        primaryColor: PRIMARY_RED,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        borderColor: borderColor,
-                      ),
-                      ConfigItem(
-                        icon: FeatherIcons.fileText,
-                        title: "Termos de uso",
-                        description: "Condições gerais de serviço",
-                        onTap: () => print('Abrir termos de uso'),
-                        primaryColor: PRIMARY_RED,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        borderColor: borderColor,
-                      ),
-                      ConfigItem(
-                        icon: FeatherIcons.lock,
-                        title: "Política de privacidade",
-                        description: "Como seus dados são usados",
-                        onTap: () => print('Abrir Política de Privacidade'),
-                        isLast: true,
-                        primaryColor: PRIMARY_RED,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        borderColor: borderColor,
-                      ),
-                    ],
-                  ),
-
-                  // Seção: Sobre
-                  _SectionTitle(title: "Sobre", color: textColor),
-                  _CardSection(
-                    backgroundColor: cardBackground,
-                    children: [
-                      ConfigItem(
-                        icon: FeatherIcons.info,
-                        title: "Versão do aplicativo",
-                        description: "Informações sobre Voltrix",
-                        customTrailing: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              "v1.0",
-                              style: TextStyle(
-                                color: textColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                            Text(
-                              "2025",
-                              style: TextStyle(
-                                color: secondaryTextColor,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+                    // Seção: Ajuda
+                    _SectionTitle(title: "Ajuda", color: textColor),
+                    _CardSection(
+                      backgroundColor: cardBackground,
+                      children: [
+                        ConfigItem(
+                          icon: FeatherIcons.helpCircle,
+                          title: "Central de ajuda",
+                          description: "Dúvidas frequentes e contato com suporte",
+                          onTap: () => print('Abrir Central de Ajuda'),
+                          primaryColor: PRIMARY_RED,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          borderColor: borderColor,
                         ),
-                        isLast: true,
-                        primaryColor: PRIMARY_RED,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                        borderColor: borderColor,
-                      ),
-                    ],
-                  ),
+                        ConfigItem(
+                          icon: FeatherIcons.fileText,
+                          title: "Termos de uso",
+                          description: "Condições gerais de serviço",
+                          onTap: () => print('Abrir termos de uso'),
+                          primaryColor: PRIMARY_RED,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          borderColor: borderColor,
+                        ),
+                        ConfigItem(
+                          icon: FeatherIcons.lock,
+                          title: "Política de privacidade",
+                          description: "Como seus dados são usados",
+                          onTap: () => print('Abrir Política de Privacidade'),
+                          isLast: true,
+                          primaryColor: PRIMARY_RED,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          borderColor: borderColor,
+                        ),
+                      ],
+                    ),
 
-                  // Rodapé
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 50, top: 20),
-                    child: Center(
-                      child: Text(
-                        "© 2025 Voltrix. Todos os direitos reservados.",
-                        style: TextStyle(
-                          color: secondaryTextColor,
-                          fontSize: 12,
+                    // Seção: Sobre
+                    _SectionTitle(title: "Sobre", color: textColor),
+                    _CardSection(
+                      backgroundColor: cardBackground,
+                      children: [
+                        ConfigItem(
+                          icon: FeatherIcons.info,
+                          title: "Versão do aplicativo",
+                          description: "Informações sobre Voltrix",
+                          customTrailing: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                "v1.0",
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              Text(
+                                "2025",
+                                style: TextStyle(
+                                  color: secondaryTextColor,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          isLast: true,
+                          primaryColor: PRIMARY_RED,
+                          textColor: textColor,
+                          secondaryTextColor: secondaryTextColor,
+                          borderColor: borderColor,
+                        ),
+                      ],
+                    ),
+
+                    // Rodapé
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 50, top: 20),
+                      child: Center(
+                        child: Text(
+                          "© 2025 Voltrix. Todos os direitos reservados.",
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

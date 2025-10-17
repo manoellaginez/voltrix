@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:voltrix/theme/theme_notifier.dart'; // Import do Notifier
+import 'package:voltrix/theme/app_gradients.dart'; // Import das constantes
 
-/// Modelo básico para um dispositivo
+/// Modelo básico para um dispositivo (inalterado)
 class Device {
   final int id;
   final String name;
@@ -18,7 +21,7 @@ class Device {
   });
 }
 
-/// Simulação de chamada de API — substitua pela sua implementação real
+/// Simulação de chamada de API (inalterado)
 Future<Map<String, dynamic>> fetchEnergia(int dispositivoId) async {
   await Future.delayed(const Duration(seconds: 1));
   return {
@@ -97,6 +100,15 @@ class _DetalheDispositivoState extends State<DetalheDispositivo> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Acesso ao tema global e cores dinâmicas
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.isDarkMode;
+    final colors = getThemeStyles(isDarkMode);
+
+    final textColor = colors['textColor']!;
+    final secondaryTextColor = colors['secondaryTextColor']!;
+    final cardBackground = colors['cardBackground']!;
+    
     final device = widget.devices.firstWhere(
       (d) => d.id == widget.dispositivoId,
       orElse: () => Device(id: -1, name: 'N/A', room: '—', type: '—'),
@@ -109,7 +121,7 @@ class _DetalheDispositivoState extends State<DetalheDispositivo> {
             padding: const EdgeInsets.all(20),
             child: Text(
               'Dispositivo não encontrado.',
-              style: TextStyle(color: Colors.grey[800], fontSize: 18),
+              style: TextStyle(color: textColor, fontSize: 18),
             ),
           ),
         ),
@@ -121,265 +133,274 @@ class _DetalheDispositivoState extends State<DetalheDispositivo> {
     final kwhMes = energia?['kwh_mes'];
     final ligado = energia?['ligado'];
 
-    final primaryColor = Theme.of(context).primaryColor;
+    const primaryColor = kPrimaryRed;
     const lightText = Colors.white;
-    const darkText = Colors.black87;
+    final inactiveCardColor = isDarkMode ? colors['borderColor'] : Colors.grey.shade200; // Cor do card quando DESLIGADO
+    final modalColor = isDarkMode ? kDarkBackground : Colors.white;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ===== TOPO =====
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back_ios_new),
-                        color: Colors.grey[700],
-                      ),
-                      IconButton(
-                        onPressed: () => setState(() => showModal = true),
-                        icon: Icon(Icons.delete, color: primaryColor),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-
-                  // ===== TÍTULO =====
-                  Text(
-                    device.name,
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Local: ${device.room} | Tipo: ${device.type}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ===== CARD STATUS =====
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 20),
-                    decoration: BoxDecoration(
-                      color: device.status ? primaryColor : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        )
-                      ],
-                    ),
-                    child: Row(
+      // 2. Aplicando o Gradiente Dinâmico na raiz
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: themeNotifier.currentGradient,
+        ),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ===== TOPO =====
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Status',
-                              style: TextStyle(
-                                color:
-                                    device.status ? lightText : Colors.black54,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              device.status ? 'LIGADO' : 'DESLIGADO',
-                              style: TextStyle(
-                                color: device.status ? lightText : darkText,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (ligado != null)
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.arrow_back_ios_new),
+                          color: secondaryTextColor, // Cor dinâmica
+                        ),
+                        IconButton(
+                          onPressed: () => setState(() => showModal = true),
+                          icon: Icon(Icons.delete, color: primaryColor),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // ===== TÍTULO =====
+                    Text(
+                      device.name,
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'Local: ${device.room} | Tipo: ${device.type}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: secondaryTextColor, // Cor dinâmica
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ===== CARD STATUS =====
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 20),
+                      decoration: BoxDecoration(
+                        // Cor do card: Vermelho Ativo / Cinza/Borda Inativo
+                        color: device.status ? primaryColor : inactiveCardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.12),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                '(Tapo: ${ligado ? 'Ligado' : 'Desligado'})',
-                                style: const TextStyle(
-                                  color: lightText,
-                                  fontSize: 14,
+                                'Status',
+                                style: TextStyle(
+                                  color:
+                                      device.status ? lightText : secondaryTextColor, // Cor dinâmica
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                          ],
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            widget.onToggleDevice(device.id);
-                            setState(() {});
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: 55,
-                            height: 30,
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              color: device.status
-                                  ? Colors.green
-                                  : Colors.grey.shade400,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            alignment: device.status
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
+                              const SizedBox(height: 5),
+                              Text(
+                                device.status ? 'LIGADO' : 'DESLIGADO',
+                                style: TextStyle(
+                                  color: device.status ? lightText : textColor, // Cor dinâmica
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (ligado != null)
+                                Text(
+                                  '(Tapo: ${ligado ? 'Ligado' : 'Desligado'})',
+                                  style: TextStyle(
+                                    color: device.status ? lightText.withOpacity(0.7) : secondaryTextColor, // Cor dinâmica
+                                    fontSize: 14,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              widget.onToggleDevice(device.id);
+                              setState(() {});
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 55,
+                              height: 30,
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: device.status
+                                    ? Colors.green
+                                    : Colors.grey.shade400,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              alignment: device.status
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // ===== CARD CONSUMO =====
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        )
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Informações de Uso',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        if (loadingEnergia)
-                          const Text(
-                            'Carregando telemetria…',
-                            style: TextStyle(color: Colors.black54),
-                          ),
-                        if (erroEnergia != null && !loadingEnergia)
+                    // ===== CARD CONSUMO (Informações de Uso) =====
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 20),
+                      decoration: BoxDecoration(
+                        color: cardBackground, // Cor de fundo dinâmica
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.12),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            'Erro: $erroEnergia',
-                            style: TextStyle(color: primaryColor),
-                          ),
-                        if (!loadingEnergia && erroEnergia == null) ...[
-                          Text(
-                            'Potência agora: ${fmt(watts, 2)} W',
-                            style: const TextStyle(fontSize: 16),
+                            'Informações de Uso',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: textColor, // Cor dinâmica
+                            ),
                           ),
                           const SizedBox(height: 10),
-                          Text(
-                            'Hoje: ${fmt(kwhHoje, 3)} kWh',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Mês: ${fmt(kwhMes, 3)} kWh',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ]
-                      ],
+                          if (loadingEnergia)
+                            Text(
+                              'Carregando telemetria…',
+                              style: TextStyle(color: secondaryTextColor), // Cor dinâmica
+                            ),
+                          if (erroEnergia != null && !loadingEnergia)
+                            Text(
+                              'Erro: $erroEnergia',
+                              style: TextStyle(color: primaryColor),
+                            ),
+                          if (!loadingEnergia && erroEnergia == null) ...[
+                            Text(
+                              'Potência agora: ${fmt(watts, 2)} W',
+                              style: TextStyle(fontSize: 16, color: textColor), // Cor dinâmica
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Hoje: ${fmt(kwhHoje, 3)} kWh',
+                              style: TextStyle(fontSize: 16, color: textColor), // Cor dinâmica
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Mês: ${fmt(kwhMes, 3)} kWh',
+                              style: TextStyle(fontSize: 16, color: textColor), // Cor dinâmica
+                            ),
+                          ]
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // ===== MODAL =====
-            if (showModal)
-              Container(
-                color: Colors.black54,
-                child: Center(
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.85,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Confirmar remoção',
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Tem certeza que deseja remover o dispositivo "${device.name}"?',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  widget.onRemoveDevice(device.id);
-                                  setState(() {
-                                    showModal = false;
-                                  });
-                                  Navigator.pop(context);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
+              // ===== MODAL (FICA POR CIMA) =====
+              if (showModal)
+                Container(
+                  color: Colors.black54, // Overlay escuro
+                  child: Center(
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.85,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: modalColor, // Fundo dinâmico do modal
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Confirmar remoção',
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold, color: textColor), // Cor dinâmica
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Tem certeza que deseja remover o dispositivo "${device.name}"?',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16, color: secondaryTextColor), // Cor dinâmica
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    widget.onRemoveDevice(device.id);
+                                    setState(() {
+                                      showModal = false;
+                                    });
+                                    Navigator.pop(context);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Remover'),
                                 ),
-                                child: const Text('Remover'),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    showModal = false;
-                                  });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey,
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      showModal = false;
+                                    });
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Cancelar'),
                                 ),
-                                child: const Text('Cancelar'),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

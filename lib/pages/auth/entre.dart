@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+import 'package:voltrix/theme/theme_notifier.dart';
+import 'package:voltrix/theme/app_gradients.dart';
 
 class EntrePage extends StatefulWidget {
   const EntrePage({super.key});
@@ -14,135 +18,162 @@ class _EntrePageState extends State<EntrePage> {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFFB42222);
-    const secondaryInputColor = Color(0xFFF6F6F6);
-    const secondaryTextColor = Color(0xFF828282);
-    const inputTextColor = Color(0xFFA6A6A6);
+    // 1. Acessa o estado global do tema e as cores
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.isDarkMode;
+    final colors = getThemeStyles(isDarkMode);
+
+    const primaryColor = kPrimaryRed;
+    final textColor = colors['textColor']!;
+    final secondaryTextColor = colors['secondaryTextColor']!;
+    final inputFillColor = colors['cardBackground']!;
+    final buttonTextColor = isDarkMode ? Colors.black : Colors.white; 
+
+    final LinearGradient currentGradient = themeNotifier.currentGradient;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F4F4),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // ------------------- LOGO -------------------
-                Column(
-                  children: [
-                    _VoltrixLogo(color: primaryColor),
-                    const SizedBox(height: 8),
-                    Text(
-                      'projetado para você.',
-                      style: GoogleFonts.inter(
-                        color: primaryColor,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 50),
-
-                // ------------------- FORM -------------------
-                Column(
-                  children: [
-                    _InputField(
-                      controller: emailController,
-                      label: 'E-mail',
-                      hint: 'E-mail',
-                      obscure: false,
-                    ),
-                    const SizedBox(height: 15),
-                    _InputField(
-                      controller: senhaController,
-                      label: 'Senha',
-                      hint: 'Senha',
-                      obscure: true,
-                    ),
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: const Size(0, 0),
+      // Aplicando o Gradiente Dinâmico
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: currentGradient,
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 40),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // ------------------- LOGO -------------------
+                  Column(
+                    children: [
+                      _VoltrixLogo(color: primaryColor),
+                      const SizedBox(height: 8),
+                      Text(
+                        'projetado para você.',
+                        style: GoogleFonts.inter(
+                          color: primaryColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
                         ),
-                        onPressed: () {
-                          // implementar esqueci minha senha futuramente
-                        },
-                        child: Text(
-                          'Esqueci minha senha',
-                          style: GoogleFonts.inter(
-                            color: primaryColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 50),
+
+                  // ------------------- FORM -------------------
+                  Column(
+                    children: [
+                      _InputField(
+                        controller: emailController,
+                        label: 'E-mail',
+                        hint: 'E-mail',
+                        obscure: false,
+                        textColor: textColor,
+                        hintTextColor: secondaryTextColor,
+                        fillColor: inputFillColor,
+                        primaryColor: primaryColor,
+                      ),
+                      const SizedBox(height: 15),
+                      _InputField(
+                        controller: senhaController,
+                        label: 'Senha',
+                        hint: 'Senha',
+                        obscure: true,
+                        textColor: textColor,
+                        hintTextColor: secondaryTextColor,
+                        fillColor: inputFillColor,
+                        primaryColor: primaryColor,
+                      ),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(0, 0),
+                          ),
+                          onPressed: () {
+                            // implementar esqueci minha senha futuramente
+                          },
+                          child: Text(
+                            'Esqueci minha senha',
+                            style: GoogleFonts.inter(
+                              color: primaryColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
+                      const SizedBox(height: 10),
 
-                    // -------- BOTÕES ENTRAR / CADASTRAR --------
-                    _MainButton(
-                      text: 'ENTRAR',
-                      color: primaryColor,
-                      onTap: () {
-                        Navigator.pushNamed(context, '/inicio');
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    _MainButton(
-                      text: 'CADASTRE-SE',
-                      color: const Color(0xFFB42222),
-                      onTap: () {
-                        Navigator.pushNamed(context, '/cadastro');
-                      },
-                    ),
-                  ],
-                ),
-
-                // -------- DIVISOR "OU" --------
-                const SizedBox(height: 30),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Divider(color: secondaryTextColor.withOpacity(0.5)),
-                    ),
-                    const SizedBox(width: 15),
-                    Text(
-                      'ou',
-                      style: GoogleFonts.inter(
-                        color: secondaryTextColor,
-                        fontSize: 14,
+                      // -------- BOTÕES ENTRAR / CADASTRAR --------
+                      _MainButton(
+                        text: 'ENTRAR',
+                        color: primaryColor,
+                        onTap: () {
+                          Navigator.pushNamed(context, '/inicio');
+                        },
+                        textColor: buttonTextColor,
                       ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Divider(color: secondaryTextColor.withOpacity(0.5)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 30),
-
-                // -------- GOOGLE BUTTON --------
-                _GoogleButton(),
-
-                // -------- TERMOS --------
-                const SizedBox(height: 50),
-                Text(
-                  'Ao clicar em cadastro, você concorda com nossos\n'
-                  'Termos de Serviço e com a Política de Privacidade',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    color: secondaryTextColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    height: 1.4,
+                      const SizedBox(height: 8),
+                      _MainButton(
+                        text: 'CADASTRE-SE',
+                        color: primaryColor,
+                        onTap: () {
+                          Navigator.pushNamed(context, '/cadastro');
+                        },
+                        textColor: buttonTextColor,
+                      ),
+                    ],
                   ),
-                ),
-              ],
+
+                  // -------- DIVISOR "OU" --------
+                  const SizedBox(height: 30),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(color: secondaryTextColor.withOpacity(0.5)),
+                      ),
+                      const SizedBox(width: 15),
+                      Text(
+                        'ou',
+                        style: GoogleFonts.inter(
+                          color: secondaryTextColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Divider(color: secondaryTextColor.withOpacity(0.5)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+
+                  // -------- GOOGLE BUTTON --------
+                  _GoogleButton(
+                    isDarkMode: isDarkMode,
+                    secondaryTextColor: secondaryTextColor,
+                    cardBackground: inputFillColor,
+                  ),
+
+                  // -------- TERMOS --------
+                  const SizedBox(height: 50),
+                  Text(
+                    'Ao clicar em cadastro, você concorda com nossos\n'
+                    'Termos de Serviço e com a Política de Privacidade',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      color: secondaryTextColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -152,19 +183,28 @@ class _EntrePageState extends State<EntrePage> {
 }
 
 // ---------------------------------------------------------
-// INPUT FIELD
+// INPUT FIELD (Atualizado para cores dinâmicas)
 // ---------------------------------------------------------
 class _InputField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
   final bool obscure;
+  final Color textColor;
+  final Color hintTextColor;
+  final Color fillColor;
+  final Color primaryColor;
+
 
   const _InputField({
     required this.controller,
     required this.label,
     required this.hint,
     required this.obscure,
+    required this.textColor,
+    required this.hintTextColor,
+    required this.fillColor,
+    required this.primaryColor,
   });
 
   @override
@@ -173,16 +213,16 @@ class _InputField extends StatelessWidget {
       controller: controller,
       obscureText: obscure,
       style: GoogleFonts.inter(
-        color: const Color(0xFFA6A6A6),
+        color: textColor,
         fontWeight: FontWeight.w600,
         fontSize: 14,
       ),
       decoration: InputDecoration(
         filled: true,
-        fillColor: const Color(0xFFF6F6F6),
+        fillColor: fillColor,
         hintText: hint,
         hintStyle: GoogleFonts.inter(
-          color: const Color(0xFFA6A6A6),
+          color: hintTextColor,
           fontWeight: FontWeight.w600,
         ),
         contentPadding:
@@ -191,10 +231,13 @@ class _InputField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        // sombra leve parecida com o JSX
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: primaryColor, width: 1.5),
         ),
       ),
     );
@@ -202,17 +245,19 @@ class _InputField extends StatelessWidget {
 }
 
 // ---------------------------------------------------------
-// MAIN BUTTON
+// MAIN BUTTON (Atualizado para cores dinâmicas)
 // ---------------------------------------------------------
 class _MainButton extends StatelessWidget {
   final String text;
   final Color color;
   final VoidCallback onTap;
+  final Color textColor;
 
   const _MainButton({
     required this.text,
     required this.color,
     required this.onTap,
+    required this.textColor,
   });
 
   @override
@@ -231,7 +276,7 @@ class _MainButton extends StatelessWidget {
         child: Text(
           text,
           style: GoogleFonts.inter(
-            color: Colors.white,
+            color: textColor,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -242,10 +287,18 @@ class _MainButton extends StatelessWidget {
 }
 
 // ---------------------------------------------------------
-// GOOGLE BUTTON
+// GOOGLE BUTTON (Atualizado para cores dinâmicas)
 // ---------------------------------------------------------
 class _GoogleButton extends StatelessWidget {
-  const _GoogleButton();
+  final bool isDarkMode;
+  final Color secondaryTextColor;
+  final Color cardBackground;
+
+  const _GoogleButton({
+    required this.isDarkMode,
+    required this.secondaryTextColor,
+    required this.cardBackground,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -253,23 +306,23 @@ class _GoogleButton extends StatelessWidget {
       height: 43,
       width: double.infinity,
       child: OutlinedButton.icon(
-        icon: Image.network(
-          'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
+        icon: SvgPicture.asset(
+          'assets/google-icon.svg', 
           height: 22,
         ),
         label: Text(
           'Continuar com o Google',
           style: GoogleFonts.inter(
-            color: Colors.black87,
+            color: isDarkMode ? Colors.white : Colors.black87,
             fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
         ),
         style: OutlinedButton.styleFrom(
-          backgroundColor: const Color(0xFFEEEEEE),
+          backgroundColor: cardBackground,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          side: BorderSide.none,
+          side: BorderSide(color: secondaryTextColor.withOpacity(0.5), width: 1), // Borda adaptável
         ),
         onPressed: () {},
       ),
@@ -278,7 +331,7 @@ class _GoogleButton extends StatelessWidget {
 }
 
 // ---------------------------------------------------------
-// VOLTRIX LOGO (SVG CONVERTIDO)
+// VOLTRIX LOGO (inalterado)
 // ---------------------------------------------------------
 class _VoltrixLogo extends StatelessWidget {
   final Color color;
@@ -286,7 +339,6 @@ class _VoltrixLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // por simplicidade, representaremos com apenas um texto (pode trocar depois por o SVG real)
     return Text(
       'VOLTRIX',
       style: GoogleFonts.inter(
