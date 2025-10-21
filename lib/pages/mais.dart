@@ -323,7 +323,7 @@ class ConfigItem extends StatelessWidget {
             ),
             if (isToggle)
               Switch(
-                activeColor: primaryColor,
+                activeThumbColor: primaryColor,
                 value: toggled,
                 onChanged: onToggle,
               )

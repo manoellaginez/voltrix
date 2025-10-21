@@ -16,7 +16,7 @@ Future<Map<String, dynamic>> fetchEnergia(String id) async {
 }
 
 class DetalhePainelSolar extends StatefulWidget {
-  const DetalhePainelSolar({Key? key}) : super(key: key);
+  const DetalhePainelSolar({super.key});
 
   @override
   State<DetalhePainelSolar> createState() => _DetalhePainelSolarState();

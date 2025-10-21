@@ -42,7 +42,6 @@ class _CadastroPageState extends State<CadastroPage> {
     final colors = getThemeStyles(isDarkMode);
 
     const primaryColor = kPrimaryRed;
-    final textColor = colors['textColor']!;
     final inputFillColor = colors['cardBackground']!;
     final inputTextColor = isDarkMode ? Colors.white : const Color(0xFFA6A6A6); // Cor do texto digitado
     final hintTextColor = colors['secondaryTextColor']!;

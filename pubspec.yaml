@@ -19,6 +19,8 @@ dependencies:
   flutter_svg: ^2.0.9 
   # === NOVO: Adicione 'provider' para Gerenciamento de Estado Global ===
   provider: ^6.1.2 
+  firebase_core: ^4.2.0
+  firebase_auth: ^6.1.1
 
 
 dev_dependencies:

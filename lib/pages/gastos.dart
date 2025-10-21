@@ -4,7 +4,7 @@ import 'package:voltrix/theme/theme_notifier.dart'; // Import do Notifier
 import 'package:voltrix/theme/app_gradients.dart'; // Import das constantes
 
 class GastosPage extends StatefulWidget {
-  const GastosPage({Key? key}) : super(key: key);
+  const GastosPage({super.key});
 
   @override
   State<GastosPage> createState() => _GastosPageState();

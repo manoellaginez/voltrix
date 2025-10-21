@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:voltrix/pages/home/adicionardispositivo.dart';
-import 'package:voltrix/pages/home/assistente.dart';
-import 'package:voltrix/pages/home/inicio.dart';
-import 'package:voltrix/pages/home/gastos.dart';
-import 'package:voltrix/pages/home/perfil.dart';
-import 'package:voltrix/pages/home/mais.dart';
-import 'package:voltrix/pages/auth/cadastro.dart';
-import 'package:voltrix/pages/auth/entre.dart';
+import 'package:voltrix/pages/adicionardispositivo.dart';
+import 'package:voltrix/pages/assistente.dart';
+import 'package:voltrix/pages/inicio.dart';
+import 'package:voltrix/pages/gastos.dart';
+import 'package:voltrix/pages/perfil.dart';
+import 'package:voltrix/pages/mais.dart';
+import 'package:voltrix/pages/cadastro.dart';
+import 'package:voltrix/pages/entre.dart';
 import 'package:voltrix/widgets/navbar.dart';
 import 'package:provider/provider.dart'; 
 import 'package:voltrix/theme/theme_notifier.dart'; 
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+
+
+void main() async {
+
+    WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+  ); 
+
   runApp(
     // Envolve todo o aplicativo com o ThemeNotifier
     ChangeNotifierProvider(
@@ -26,11 +37,6 @@ class VoltrixApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Inicializa o tema do sistema na primeira construção
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final platformBrightness = MediaQuery.of(context).platformBrightness;
-      Provider.of<ThemeNotifier>(context, listen: false).initializeTheme(platformBrightness);
-    });
 
     return MaterialApp(
       title: 'voltrix',

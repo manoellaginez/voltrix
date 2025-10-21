@@ -42,14 +42,14 @@ Map<String, Color> getThemeStyles(bool isDark) {
     };
   } else {
     // Tema Claro
-    const Color BORDER_COLOR = Color(0xFFE0E0E0);
-    const Color MAIN_TEXT_COLOR_REQUESTED = Color(0xFFA6A6A6);
+    const Color borderColor = Color(0xFFE0E0E0);
+    const Color mainTextColorRequested = Color(0xFFA6A6A6);
 
     return {
       'cardBackground': const Color(0xFFF6F6F6),
       'textColor': Colors.black,
-      'secondaryTextColor': MAIN_TEXT_COLOR_REQUESTED,
-      'borderColor': BORDER_COLOR,
+      'secondaryTextColor': mainTextColorRequested,
+      'borderColor': borderColor,
     };
   }
 }

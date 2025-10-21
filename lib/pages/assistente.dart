@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:voltrix/theme/theme_notifier.dart'; // Import necessário
-import 'package:voltrix/theme/app_gradients.dart'; // Import necessário (para kPrimaryRed e getThemeStyles)
+import 'package:voltrix/theme/theme_notifier.dart'; 
+import 'package:voltrix/theme/app_gradients.dart'; 
 
 class AssistentePage extends StatefulWidget {
   const AssistentePage({super.key});
@@ -12,7 +12,6 @@ class AssistentePage extends StatefulWidget {
 }
 
 class _AssistentePageState extends State<AssistentePage> {
-  // Apenas a cor primária é mantida estática, o resto será lido do tema
   final Color primaryColor = kPrimaryRed;
 
   final ScrollController _scrollController = ScrollController();
@@ -98,7 +97,6 @@ class _AssistentePageState extends State<AssistentePage> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Acessa o tema global e as cores dinâmicas
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkMode = themeNotifier.isDarkMode;
     final colors = getThemeStyles(isDarkMode);
@@ -106,28 +104,25 @@ class _AssistentePageState extends State<AssistentePage> {
     final textColor = colors['textColor']!;
     final secondaryTextColor = colors['secondaryTextColor']!;
     final cardBackground = colors['cardBackground']!;
-    final inputFillColor = colors['cardBackground']!;
 
-    // A caixa de sugestões só some se o usuário começar a digitar.
     final bool showSuggestions = _messageController.text.isEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.transparent, // Necessário para ver o gradiente no body
+      backgroundColor: Colors.transparent, 
       resizeToAvoidBottomInset: true, 
       
-      // 2. Aplicando o Gradiente Dinâmico na raiz
       body: Container(
         decoration: BoxDecoration(
           gradient: themeNotifier.currentGradient,
         ),
-        child: SafeArea(
+        child: SafeArea( 
           child: Column(
             children: [
               // 🔸 Cabeçalho
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
                 child: Container( 
-                  color: Colors.transparent, // Fundo transparente para ver o gradiente
+                  color: Colors.transparent, 
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -146,7 +141,7 @@ class _AssistentePageState extends State<AssistentePage> {
                             Text(
                               'Sua consultora de energia inteligente',
                               style: TextStyle(
-                                color: secondaryTextColor, // Cor dinâmica
+                                color: secondaryTextColor, 
                                 fontSize: 14,
                               ),
                             ),
@@ -158,7 +153,7 @@ class _AssistentePageState extends State<AssistentePage> {
                 ),
               ),
 
-              // 🔸 Chat
+              // 🔸 Chat (ListView)
               Expanded( 
                 child: ListView.builder(
                   controller: _scrollController,
@@ -176,7 +171,6 @@ class _AssistentePageState extends State<AssistentePage> {
                             vertical: 10, horizontal: 15),
                         constraints: const BoxConstraints(maxWidth: 300),
                         decoration: BoxDecoration(
-                          // Cores dinâmicas para os balões de mensagem
                           color: isUser ? primaryColor : cardBackground, 
                           borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(isUser ? 15 : 2),
@@ -193,7 +187,6 @@ class _AssistentePageState extends State<AssistentePage> {
                             Text(
                               msg['text'],
                               style: TextStyle(
-                                // Texto do usuário é sempre branco no balão vermelho
                                 color: isUser ? Colors.white : textColor, 
                                 fontSize: 15,
                                 height: 1.4,
@@ -204,8 +197,8 @@ class _AssistentePageState extends State<AssistentePage> {
                               msg['time'],
                               style: TextStyle(
                                 color: isUser
-                                    ? Colors.white.withOpacity(0.7) // Opacidade para o texto claro
-                                    : secondaryTextColor, // Cor dinâmica
+                                    ? Colors.white.withOpacity(0.7) 
+                                    : secondaryTextColor, 
                                 fontSize: 10,
                               ),
                             ),
@@ -220,76 +213,89 @@ class _AssistentePageState extends State<AssistentePage> {
               // 🔸 Sugestões fixas acima do input
               if (showSuggestions)
                 Padding(
+                  // Usar apenas padding horizontal
                   padding: const EdgeInsets.symmetric(horizontal: 15),
                   child: Container(
-                    color: Colors.transparent, // Fundo transparente
+                    color: Colors.transparent, 
+                    // === CORREÇÃO DE OVERFLOW: Usar Column com minAxisSize e SizedBox ===
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min, // Força a ocupar o mínimo de espaço
                       children: [
+                        const SizedBox(height: 10), // Espaço antes de 'Sugestões'
                         Text(
                           'Sugestões:',
                           style: TextStyle(
-                            color: textColor, // Cor dinâmica
+                            color: textColor, 
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: suggestions.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 1.8,
+                        const SizedBox(height: 5), 
+                        
+                        // Envolvemos o GridView em um ConstrainedBox para limitar a altura total
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            // Altura máxima segura para dois itens com childAspectRatio de 1.8
+                            maxHeight: 250, 
                           ),
-                          itemBuilder: (context, index) {
-                            final s = suggestions[index];
-                            return GestureDetector(
-                              onTap: () => _sendMessage(s['text']),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: cardBackground, // Cor dinâmica do card
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                padding: const EdgeInsets.all(15),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(s['icon'], color: primaryColor),
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      s['title'],
-                                      style: TextStyle(
-                                        color: textColor, // Cor dinâmica
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
+                          child: GridView.builder(
+                            // shrinkWrap: true é OBRIGATÓRIO em layouts de Column aninhados
+                            shrinkWrap: true, 
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: suggestions.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 1.8, 
+                            ),
+                            itemBuilder: (context, index) {
+                              final s = suggestions[index];
+                              return GestureDetector(
+                                onTap: () => _sendMessage(s['text']),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: cardBackground, 
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
                                       ),
-                                    ),
-                                    Text(
-                                      s['text'],
-                                      style: TextStyle(
-                                        color: secondaryTextColor, // Cor dinâmica
-                                        fontSize: 12,
+                                    ],
+                                  ),
+                                  padding: const EdgeInsets.all(15),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(s['icon'], color: primaryColor),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        s['title'],
+                                        style: TextStyle(
+                                          color: textColor, 
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                      Text(
+                                        s['text'],
+                                        style: TextStyle(
+                                          color: secondaryTextColor, 
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 5), // Espaço após o GridView
                       ],
                     ),
                   ),
@@ -299,20 +305,20 @@ class _AssistentePageState extends State<AssistentePage> {
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                color: inputFillColor, // Cor de fundo do input (dinâmica)
+                color: cardBackground, 
                 child: Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _messageController,
-                        style: TextStyle(color: textColor), // Cor dinâmica do texto digitado
+                        style: TextStyle(color: textColor), 
                         decoration: InputDecoration(
                           hintText: 'Digite sua pergunta sobre energia...',
-                          hintStyle: TextStyle(color: secondaryTextColor), // Cor dinâmica
+                          hintStyle: TextStyle(color: secondaryTextColor), 
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 15, vertical: 12),
                           filled: true,
-                          fillColor: inputFillColor, // Cor dinâmica do input
+                          fillColor: cardBackground, 
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(25),
                             borderSide: BorderSide(
@@ -328,7 +334,7 @@ class _AssistentePageState extends State<AssistentePage> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(25),
                             borderSide: BorderSide(
-                              color: primaryColor, // Cor primária no foco
+                              color: primaryColor, 
                               width: 1.5
                             ),
                           ),

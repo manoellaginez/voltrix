@@ -90,7 +90,7 @@ class DispositivoCard extends StatelessWidget {
                 Switch(
                   value: status,
                   onChanged: (_) => onToggle(),
-                  activeColor: Colors.white, // bolinha branca
+                  activeThumbColor: Colors.white, // bolinha branca
                   activeTrackColor: redColor, // fundo vermelho
                   inactiveThumbColor: Colors.white, // bolinha branca quando off
                   inactiveTrackColor: inactiveTrackColor, // trilha cinza/escura dinâmica

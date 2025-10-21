@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:voltrix/theme/theme_notifier.dart';
 import 'package:voltrix/theme/app_gradients.dart';
-import '../../widgets/DispositivoCard.dart'; // Mantido, ajuste o caminho se necessário
+import '../widgets/DispositivoCard.dart'; // Mantido, ajuste o caminho se necessário
 
 class InicioPage extends StatefulWidget {
   const InicioPage({super.key});

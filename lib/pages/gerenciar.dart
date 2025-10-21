@@ -96,9 +96,7 @@ class _GerenciarPageState extends State<GerenciarPage> {
     );
     if (picked != null) {
       final formatted =
-          picked.hour.toString().padLeft(2, '0') +
-          ':' +
-          picked.minute.toString().padLeft(2, '0');
+          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       setState(() {
         if (isRelink) {
           relinkTime = formatted;
@@ -234,7 +232,7 @@ class _GerenciarPageState extends State<GerenciarPage> {
                       // Selecionar dispositivo
                       _Label("Selecione o dispositivo:", secondaryTextColor),
                       DropdownButtonFormField<int>(
-                        value: selectedDevice,
+                        initialValue: selectedDevice,
                         decoration: _inputDecoration(
                           borderColor,
                           primaryColor,
@@ -266,7 +264,7 @@ class _GerenciarPageState extends State<GerenciarPage> {
                               children: [
                                 _Label("Ação:", secondaryTextColor),
                                 DropdownButtonFormField<String>(
-                                  value: actionType,
+                                  initialValue: actionType,
                                   decoration: _inputDecoration(
                                     borderColor,
                                     primaryColor,
