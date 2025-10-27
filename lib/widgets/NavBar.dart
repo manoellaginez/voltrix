@@ -41,7 +41,7 @@ class Navbar extends StatelessWidget {
           
           showUnselectedLabels: true,
           items: const [
-            BottomNavigationBarItem(
+              BottomNavigationBarItem(
               icon: Icon(Icons.smart_toy), // Assistente
               label: 'Assistente',
             ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:voltrix/theme/theme_notifier.dart'; 
-import 'package:voltrix/theme/app_gradients.dart'; 
+import 'package:voltrix/theme/theme_notifier.dart';
+import 'package:voltrix/theme/app_gradients.dart';
 
 class AssistentePage extends StatefulWidget {
   const AssistentePage({super.key});
@@ -64,20 +64,23 @@ class _AssistentePageState extends State<AssistentePage> {
         'sender': 'user',
         'time': formattedTime
       });
+      _messageController.clear();
     });
-    _messageController.clear();
+
 
     Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        messages.add({
-          'id': messages.length + 1,
-          'text':
-              'Essa é uma excelente pergunta! Vou processar a sua solicitação. (Esta será a área de resposta da IA)',
-          'sender': 'bot',
-          'time': formattedTime
+      if (mounted) {
+        setState(() {
+          messages.add({
+            'id': messages.length + 1,
+            'text':
+                'Essa é uma excelente pergunta! Vou processar a sua solicitação. (Esta será a área de resposta da IA)',
+            'sender': 'bot',
+            'time': formattedTime
+          });
         });
-      });
-      _scrollToEnd();
+        _scrollToEnd();
+      }
     });
 
     _scrollToEnd();
@@ -105,24 +108,23 @@ class _AssistentePageState extends State<AssistentePage> {
     final secondaryTextColor = colors['secondaryTextColor']!;
     final cardBackground = colors['cardBackground']!;
 
-    final bool showSuggestions = _messageController.text.isEmpty;
-
     return Scaffold(
-      backgroundColor: Colors.transparent, 
-      resizeToAvoidBottomInset: true, 
-      
+      backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: true,
+
       body: Container(
         decoration: BoxDecoration(
           gradient: themeNotifier.currentGradient,
         ),
-        child: SafeArea( 
+        child: SafeArea(
           child: Column(
             children: [
               // 🔸 Cabeçalho
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-                child: Container( 
-                  color: Colors.transparent, 
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                child: Container(
+                  color: Colors.transparent,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -141,7 +143,7 @@ class _AssistentePageState extends State<AssistentePage> {
                             Text(
                               'Sua consultora de energia inteligente',
                               style: TextStyle(
-                                color: secondaryTextColor, 
+                                color: secondaryTextColor,
                                 fontSize: 14,
                               ),
                             ),
@@ -154,7 +156,7 @@ class _AssistentePageState extends State<AssistentePage> {
               ),
 
               // 🔸 Chat (ListView)
-              Expanded( 
+              Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -171,7 +173,7 @@ class _AssistentePageState extends State<AssistentePage> {
                             vertical: 10, horizontal: 15),
                         constraints: const BoxConstraints(maxWidth: 300),
                         decoration: BoxDecoration(
-                          color: isUser ? primaryColor : cardBackground, 
+                          color: isUser ? primaryColor : cardBackground,
                           borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(isUser ? 15 : 2),
                             topRight: Radius.circular(isUser ? 2 : 15),
@@ -187,7 +189,7 @@ class _AssistentePageState extends State<AssistentePage> {
                             Text(
                               msg['text'],
                               style: TextStyle(
-                                color: isUser ? Colors.white : textColor, 
+                                color: isUser ? Colors.white : textColor,
                                 fontSize: 15,
                                 height: 1.4,
                               ),
@@ -197,8 +199,8 @@ class _AssistentePageState extends State<AssistentePage> {
                               msg['time'],
                               style: TextStyle(
                                 color: isUser
-                                    ? Colors.white.withOpacity(0.7) 
-                                    : secondaryTextColor, 
+                                    ? Colors.white.withOpacity(0.7)
+                                    : secondaryTextColor,
                                 fontSize: 10,
                               ),
                             ),
@@ -210,133 +212,145 @@ class _AssistentePageState extends State<AssistentePage> {
                 ),
               ),
 
-              // 🔸 Sugestões fixas acima do input
-              if (showSuggestions)
-                Padding(
-                  // Usar apenas padding horizontal
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  child: Container(
-                    color: Colors.transparent, 
-                    // === CORREÇÃO DE OVERFLOW: Usar Column com minAxisSize e SizedBox ===
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min, // Força a ocupar o mínimo de espaço
-                      children: [
-                        const SizedBox(height: 10), // Espaço antes de 'Sugestões'
-                        Text(
-                          'Sugestões:',
-                          style: TextStyle(
-                            color: textColor, 
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 5), 
-                        
-                        // Envolvemos o GridView em um ConstrainedBox para limitar a altura total
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            // Altura máxima segura para dois itens com childAspectRatio de 1.8
-                            maxHeight: 250, 
-                          ),
-                          child: GridView.builder(
-                            // shrinkWrap: true é OBRIGATÓRIO em layouts de Column aninhados
-                            shrinkWrap: true, 
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: suggestions.length,
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                              childAspectRatio: 1.8, 
+             // 🔸 Sugestões
+             ListenableBuilder(
+                listenable: _messageController,
+                builder: (context, child) {
+                  if (_messageController.text.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: Container(
+                        color: Colors.transparent,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                             const SizedBox(height: 10),
+                            Text(
+                              'Sugestões:',
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            itemBuilder: (context, index) {
-                              final s = suggestions[index];
-                              return GestureDetector(
-                                onTap: () => _sendMessage(s['text']),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: cardBackground, 
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  padding: const EdgeInsets.all(15),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Icon(s['icon'], color: primaryColor),
-                                      const SizedBox(height: 5),
-                                      Text(
-                                        s['title'],
-                                        style: TextStyle(
-                                          color: textColor, 
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
+                             const SizedBox(height: 5),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: suggestions.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                                // ========== [CORREÇÃO 1 AQUI] ==========
+                                childAspectRatio: 2.0, // Voltado para 2.0
+                                // ========== [FIM DA CORREÇÃO 1] ==========
+                              ),
+                              itemBuilder: (context, index) {
+                                final s = suggestions[index];
+                                return GestureDetector(
+                                  onTap: () => _sendMessage(s['text']),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: cardBackground,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
                                         ),
-                                      ),
-                                      Text(
-                                        s['text'],
-                                        style: TextStyle(
-                                          color: secondaryTextColor, 
-                                          fontSize: 12,
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      // ========== [CORREÇÃO 2 AQUI] ==========
+                                      // Removido mainAxisAlignment: MainAxisAlignment.spaceBetween
+                                      // ========== [FIM DA CORREÇÃO 2] ==========
+                                      children: [
+                                        Icon(s['icon'], color: primaryColor, size: 20,),
+                                        // Adiciona um Spacer para empurrar o texto para baixo se necessário
+                                        // Ou simplesmente deixa o espaço natural da Column
+                                        const Spacer(), // Opcional, dependendo do visual desejado
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              s['title'],
+                                              style: TextStyle(
+                                                color: textColor,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              s['text'],
+                                              style: TextStyle(
+                                                color: secondaryTextColor,
+                                                // ========== [CORREÇÃO 3 AQUI] ==========
+                                                fontSize: 11, // Reduzido de 12 para 11
+                                                // ========== [FIM DA CORREÇÃO 3] ==========
+                                              ),
+                                               maxLines: 2,
+                                               overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                          ),
+                                );
+                              },
+                            ),
+                             const SizedBox(height: 5),
+                          ],
                         ),
-                        const SizedBox(height: 5), // Espaço após o GridView
-                      ],
-                    ),
-                  ),
-                ),
+                      ),
+                    );
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+                },
+             ),
 
-              // 🔸 Campo de mensagem fixo acima da navbar
+
+              // 🔸 Campo de mensagem fixo
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                color: cardBackground, 
+                color: cardBackground,
                 child: Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _messageController,
-                        style: TextStyle(color: textColor), 
+                        style: TextStyle(color: textColor),
                         decoration: InputDecoration(
                           hintText: 'Digite sua pergunta sobre energia...',
-                          hintStyle: TextStyle(color: secondaryTextColor), 
+                          hintStyle: TextStyle(color: secondaryTextColor),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 15, vertical: 12),
                           filled: true,
-                          fillColor: cardBackground, 
+                          fillColor: isDarkMode ? Colors.black.withOpacity(0.2) : Colors.grey.shade200,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(25),
-                            borderSide: BorderSide(
-                              color: secondaryTextColor,
-                            ),
+                            borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(25),
-                            borderSide: BorderSide(
-                              color: secondaryTextColor,
-                            ),
+                             borderRadius: BorderRadius.circular(25),
+                             borderSide: BorderSide.none,
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(25),
                             borderSide: BorderSide(
-                              color: primaryColor, 
-                              width: 1.5
-                            ),
+                                color: primaryColor,
+                                width: 1.5),
                           ),
                           isDense: true,
                         ),
@@ -376,3 +390,4 @@ class _AssistentePageState extends State<AssistentePage> {
     );
   }
 }
+

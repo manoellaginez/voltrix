@@ -18,6 +18,10 @@ migrate_working_dir/
 *.iws
 .idea/
 
+# Firebase options (contains sensitive API keys)
+# Ignore this file anywhere in the project
+firebase_options.dart
+
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
 # is commented out by default.

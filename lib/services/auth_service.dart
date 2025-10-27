@@ -3,10 +3,12 @@ import 'package:flutter/foundation.dart';
 
 ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
 
-class AuthService {
+class AuthService extends ChangeNotifier {
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
   User? get currentUser => firebaseAuth.currentUser;
+
+  bool isLoading = true;
 
   Stream<User?> get authStateChanges => firebaseAuth.authStateChanges();
 
@@ -20,14 +22,22 @@ class AuthService {
     );
   }
 
+  // MODIFICADO: Aceita 'username' para atualizar o Display Name no Firebase
   Future<UserCredential> createAccount({
     required String email,
     required String password,
+    required String username, // Novo parâmetro
   }) async {
-    return await firebaseAuth.createUserWithEmailAndPassword(
+    // 1. Cria a conta no Firebase Auth
+    final userCredential = await firebaseAuth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
+
+    // 2. Atualiza o nome de exibição (Display Name) do usuário
+    await userCredential.user!.updateDisplayName(username);
+
+    return userCredential;
   }
 
   Future<void> singOut() async {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Importação do Firebase
 import 'package:voltrix/theme/theme_notifier.dart';
 import 'package:voltrix/theme/app_gradients.dart';
+import 'package:voltrix/services/auth_service.dart'; // Importa o serviço de autenticação
 import '../widgets/DispositivoCard.dart'; // Mantido, ajuste o caminho se necessário
 
 class InicioPage extends StatefulWidget {
@@ -15,6 +17,19 @@ class _InicioPageState extends State<InicioPage> {
   // Cor primária estática
   static const Color primaryColor = kPrimaryRed;
   
+  // Referência ao serviço de autenticação
+  final AuthService _authService = authService.value;
+
+  // Função para extrair o primeiro nome ou "Visitante"
+  String _getUserName(User? user) {
+    if (user != null && user.displayName != null && user.displayName!.isNotEmpty) {
+      // Retorna apenas o primeiro nome
+      return user.displayName!.split(' ').first;
+    }
+    return "Visitante";
+  }
+
+  // Dados mockados de dispositivos (mantidos)
   List<Map<String, dynamic>> devices = [
     {"id": 1, "name": "Lâmpada Sala", "room": "Sala", "status": true},
     {"id": 2, "name": "Ar Cond. Quarto", "room": "Quarto", "status": false},
@@ -67,13 +82,26 @@ class _InicioPageState extends State<InicioPage> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  "Olá, Manoella",
-                  style: TextStyle(
-                    fontSize: 17,
-                    color: secondaryTextColor, // Cor dinâmica
-                  ),
+                
+                // 🔴 StreamBuilder para ouvir as mudanças de autenticação e exibir o nome
+                StreamBuilder<User?>(
+                  // Ouve o Stream de mudanças de estado de autenticação
+                  stream: _authService.authStateChanges,
+                  builder: (context, snapshot) {
+                    final user = snapshot.data;
+                    final userName = _getUserName(user);
+
+                    return Text(
+                      "Olá, $userName",
+                      style: TextStyle(
+                        fontSize: 17,
+                        color: secondaryTextColor, // Cor dinâmica
+                      ),
+                    );
+                  },
                 ),
+                // Fim do StreamBuilder
+                
                 const SizedBox(height: 20),
 
                 // Status cards
@@ -148,8 +176,8 @@ class _InicioPageState extends State<InicioPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () =>
-                        Navigator.pushNamed(context, '/adicionardispositivo'),
+                    // 🔴 NAVEGAÇÃO DIRETA (Assumindo que o usuário está autenticado para chegar aqui)
+                    onPressed: () => Navigator.pushNamed(context, '/adicionardispositivo'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
@@ -181,7 +209,6 @@ class _InicioPageState extends State<InicioPage> {
 
                 // Lista de dispositivos
                 ...devices.map(
-                  // Nota: DispositivoCard deve ser atualizado separadamente para suportar cores dinâmicas.
                   (device) => DispositivoCard(
                     id: device["id"],
                     name: device["name"],
@@ -206,7 +233,7 @@ class _InicioPageState extends State<InicioPage> {
 
                 const SizedBox(height: 30),
 
-                // 🔴 Ações inteligentes
+                // Ações inteligentes
                 Text(
                   "Ações inteligentes",
                   style: TextStyle(
@@ -222,6 +249,7 @@ class _InicioPageState extends State<InicioPage> {
                   title: "Configure seu painel solar",
                   subtitle: "Acesse as configurações do seu sistema solar",
                   icon: Icons.wb_sunny,
+                  // 🔴 NAVEGAÇÃO DIRETA
                   onTap: () => Navigator.pushNamed(context, '/painel-solar'),
                   background: cardBackground, // Cor dinâmica
                   textColor: textColor, // Cor dinâmica
@@ -234,6 +262,7 @@ class _InicioPageState extends State<InicioPage> {
                   subtitle:
                       "Programe horários e otimize o consumo de seus dispositivos",
                   icon: Icons.bolt,
+                  // 🔴 NAVEGAÇÃO DIRETA
                   onTap: () => Navigator.pushNamed(context, '/gerenciar'),
                   background: cardBackground, // Cor dinâmica
                   textColor: textColor, // Cor dinâmica
