@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:voltrix/theme/theme_notifier.dart'; 
 import 'package:voltrix/theme/app_gradients.dart'; 
 
+// Removida a declaração de getThemeStyles e kPrimaryRed (causas do conflito em main.dart).
+
 class MaisPage extends StatefulWidget {
   const MaisPage({super.key});
 
@@ -25,7 +27,6 @@ class _MaisPageState extends State<MaisPage> {
 
     // 2. Obtém as cores dinâmicas usando a função global
     final colors = getThemeStyles(isDarkMode);
-        
     final cardBackground = colors['cardBackground']!;
     final textColor = colors['textColor']!;
     final secondaryTextColor = colors['secondaryTextColor']!;
@@ -322,10 +323,33 @@ class ConfigItem extends StatelessWidget {
               ),
             ),
             if (isToggle)
-              Switch(
-                activeThumbColor: primaryColor,
-                value: toggled,
-                onChanged: onToggle,
+              // CORREÇÃO FINAL: Usando Theme para sobrepor o tema global/OS.
+              Theme(
+                // Sobrescreve apenas a parte do switch do tema.
+                data: Theme.of(context).copyWith(
+                  useMaterial3: true, // Garante que as propriedades de M3 sejam usadas
+                  switchTheme: SwitchThemeData(
+                    // Bola Ativa (Thumb): Vermelho Primário
+                    thumbColor: MaterialStateProperty.resolveWith((states) => primaryColor),
+                    // Trilha Ativa (Track): Vermelho Primário Opaco
+                    trackColor: MaterialStateProperty.resolveWith((states) => 
+                      states.contains(MaterialState.selected) ? primaryColor.withOpacity(0.5) : secondaryTextColor.withOpacity(0.3)
+                    ),
+                    // Bola Desativada (Thumb): Cinza Secundário
+                    overlayColor: MaterialStateProperty.resolveWith((states) => 
+                      primaryColor.withOpacity(0.1) // Cor do ripple
+                    ),
+                  ),
+                ),
+                child: Switch(
+                  // Usando as cores que foram forçadas no tema local acima.
+                  // Aqui, definimos apenas o valor e o handler.
+                  value: toggled,
+                  onChanged: onToggle,
+                  // As propriedades de cor devem ser lidas do Theme agora.
+                  // Mas para máxima compatibilidade, definimos activeColor para garantir a bola ativa.
+                  activeColor: primaryColor, 
+                ),
               )
             else if (customTrailing != null)
               customTrailing!

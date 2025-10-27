@@ -73,7 +73,7 @@ class _DetalhePainelSolarState extends State<DetalhePainelSolar> {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  'Local: Varanda | Tipo: Painel Modelo XX',
+                  'Local: Varanda | Tipo: Painel modelo XX',
                   style: TextStyle(
                     fontSize: 16,
                     color: secondaryTextColor,
@@ -112,7 +112,7 @@ class _DetalhePainelSolarState extends State<DetalhePainelSolar> {
                       ),
                       Divider(color: secondaryTextColor.withOpacity(0.2), height: 1),
                       _buildStatusRow(
-                        title: 'Modo Melhor Posição GPS',
+                        title: 'Modo melhor posição GPS',
                         statusText: modoGpsLigado ? 'LIGADO' : 'DESLIGADO',
                         value: modoGpsLigado,
                         onChanged: (newValue) {
@@ -126,7 +126,7 @@ class _DetalhePainelSolarState extends State<DetalhePainelSolar> {
                       ),
                       Divider(color: secondaryTextColor.withOpacity(0.2), height: 1),
                       _buildStatusRow(
-                        title: 'Modo Manual',
+                        title: 'Modo manual',
                         statusText: modoManualLigado ? 'LIGADO' : 'DESLIGADO',
                         value: modoManualLigado,
                         onChanged: (newValue) {
@@ -170,10 +170,10 @@ class _DetalhePainelSolarState extends State<DetalhePainelSolar> {
                       ),
                       const SizedBox(height: 15),
                        _buildInfoRow('Quantidade de energia gerada', 'xx kWh', textColor, secondaryTextColor),
-                       _buildInfoRow('Potência Máxima de Pico', 'xx W', textColor, secondaryTextColor),
-                       _buildInfoRow('Tensão no Ponto de Máxima Potência', 'xx V', textColor, secondaryTextColor),
-                       _buildInfoRow('Corrente no Ponto de Máxima Potência', 'xx A', textColor, secondaryTextColor),
-                       _buildInfoRow('Eficiência de Módulo', 'xx %', textColor, secondaryTextColor, isLast: true),
+                       _buildInfoRow('Potência máxima de pico', 'xx W', textColor, secondaryTextColor),
+                       _buildInfoRow('Tensão no ponto de máxima potência', 'xx V', textColor, secondaryTextColor),
+                       _buildInfoRow('Corrente no ponto de máxima potência', 'xx A', textColor, secondaryTextColor),
+                       _buildInfoRow('Eficiência de módulo', 'xx %', textColor, secondaryTextColor, isLast: true),
                     ],
                   ),
                 ),

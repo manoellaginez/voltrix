@@ -1,4 +1,4 @@
-# voltrix
+# Voltrix
 
 A new Flutter project.
 

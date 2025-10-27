@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:voltrix/theme/theme_notifier.dart'; // Import do Notifier
 import 'package:voltrix/theme/app_gradients.dart'; // Import das constantes
+import 'package:feather_icons/feather_icons.dart'; // Mantendo este import para compatibilidade
+
+// ============== REMOVIDOS OS HELPERS DUPLICADOS NOVAMENTE ==============
 
 class GastosPage extends StatefulWidget {
   const GastosPage({super.key});
@@ -18,12 +21,16 @@ class _GastosPageState extends State<GastosPage> {
     // 1. Acessa o estado global do tema e as cores
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkMode = themeNotifier.isDarkMode;
-    final colors = getThemeStyles(isDarkMode);
+    
+    // Supondo que getThemeStyles está no arquivo app_gradients.dart ou em outro import
+    final colors = getThemeStyles(isDarkMode); 
 
     const primaryColor = kPrimaryRed;
     final textColor = colors['textColor']!;
     final secondaryTextColor = colors['secondaryTextColor']!;
     final cardBackground = colors['cardBackground']!;
+
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       // 2. Aplicando o Gradiente Dinâmico na raiz
@@ -31,278 +38,288 @@ class _GastosPageState extends State<GastosPage> {
         decoration: BoxDecoration(
           gradient: themeNotifier.currentGradient,
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ===================== CABEÇALHO =====================
-              Text(
-                'Gastos',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                'Monitore seus custos de energia',
-                style: TextStyle(
-                  fontSize: 17,
-                  color: secondaryTextColor, // Cor dinâmica
-                ),
-              ),
-              const SizedBox(height: 25),
-
-              // ===================== FILTROS =====================
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: ['Hoje', 'Semana', 'Mês'].map((filter) {
-                  final bool isActive = activeFilter == filter;
-                  return Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() => activeFilter = filter);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          // Cores dinâmicas para o filtro
-                          backgroundColor:
-                              isActive ? primaryColor : cardBackground,
-                          foregroundColor:
-                              isActive ? Colors.white : secondaryTextColor,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: isActive ? 3 : 0,
-                        ),
-                        child: Text(
-                          filter.toUpperCase(),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
+        // Adicionado SafeArea para resolver o problema do header "bugado"
+        child: SafeArea(
+          child: SingleChildScrollView(
+            // Ajustando o padding superior para 0, pois o SafeArea já gerencia o topo
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20), // Padding no topo após o SafeArea
+                // ===================== CABEÇALHO =====================
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Gastos',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 25),
-
-              // ===================== CARDS DE RESUMO =====================
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 2.3,
-                children: [
-                  _ResumoCard(
-                    label: 'Gasto total',
-                    value: 'R\$ 150,50',
-                    subtext: '+4.2% no último período',
-                    subtextColor: Colors.green, // Cor de destaque fixa
-                    icon: Icons.show_chart,
-                    textColor: textColor,
-                    secondaryTextColor: secondaryTextColor,
-                    cardBackground: cardBackground,
-                    isDarkMode: isDarkMode,
-                  ),
-                  _ResumoCard(
-                    label: 'Hoje',
-                    value: 'R\$ 5,30',
-                    subtext: 'Custo ideal: R\$ 6,00',
-                    subtextColor: secondaryTextColor, // Cor dinâmica
-                    icon: Icons.attach_money,
-                    textColor: textColor,
-                    secondaryTextColor: secondaryTextColor,
-                    cardBackground: cardBackground,
-                    isDarkMode: isDarkMode,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 25),
-
-              // ===================== GRÁFICO =====================
-              Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: cardBackground, // Cor dinâmica
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.12),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    )
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Gastos por hora',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: textColor, // Cor dinâmica
-                          ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Monitore seus custos de energia',
+                        style: TextStyle(
+                          fontSize: 17,
+                          color: secondaryTextColor, // Cor dinâmica
                         ),
-                        Icon(Icons.filter_list, color: secondaryTextColor), // Cor dinâmica
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-                    AspectRatio(
-                      aspectRatio: 16 / 9,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 25),
+
+                // ===================== FILTROS =====================
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: ['Hoje', 'Semana', 'Mês'].map((filter) {
+                    final bool isActive = activeFilter == filter;
+                    return Expanded(
                       child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: secondaryTextColor, // Cor dinâmica
-                            style: BorderStyle.solid,
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() => activeFilter = filter);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            // Cores dinâmicas para o filtro
+                            backgroundColor:
+                                isActive ? primaryColor : cardBackground,
+                            foregroundColor:
+                                isActive ? Colors.white : secondaryTextColor,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: isActive ? 3 : 0,
                           ),
-                          borderRadius: BorderRadius.circular(8),
-                          color: isDarkMode ? Colors.black : Colors.white, // Fundo do gráfico
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                              height: 5,
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              decoration: BoxDecoration(
-                                color: primaryColor,
-                                borderRadius: BorderRadius.circular(3),
-                              ),
+                          child: Text(
+                            filter.toUpperCase(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
                             ),
-                            const SizedBox(height: 5),
-                            Text(
-                              '00:00 - 23:59',
-                              style: TextStyle(fontSize: 12, color: secondaryTextColor), // Cor dinâmica
-                            ),
-                            const SizedBox(height: 8),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    );
+                  }).toList(),
                 ),
-              ),
 
-              const SizedBox(height: 25),
+                const SizedBox(height: 25),
 
-              // ===================== MÉDIA SEMANAL E PROJEÇÃO =====================
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: MediaQuery.of(context).size.width < 600 ? 1 : 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 2.3,
-                children: [
-                  _InfoCard(
-                    label: 'Média semanal',
-                    value: 'R\$ 0,00',
-                    icon: Icons.show_chart,
-                    iconColor: Colors.green,
-                    textColor: textColor,
-                    secondaryTextColor: secondaryTextColor,
-                    cardBackground: cardBackground,
-                    isDarkMode: isDarkMode,
-                  ),
-                  _InfoCard(
-                    label: 'Projeção mensal',
-                    value: 'R\$ 0,00',
-                    icon: Icons.calendar_today,
-                    iconColor: secondaryTextColor,
-                    textColor: textColor,
-                    secondaryTextColor: secondaryTextColor,
-                    cardBackground: cardBackground,
-                    isDarkMode: isDarkMode,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 25),
-
-              // ===================== CARD ASSISTENTE =====================
-              Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: cardBackground, // Cor dinâmica
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.12),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    )
-                  ],
-                  border: Border(
-                    top: BorderSide(color: primaryColor, width: 4),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // ===================== CARDS DE RESUMO =====================
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.smart_toy, color: primaryColor, size: 28),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Fale com a Voltrix Assistente',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: textColor, // Cor dinâmica
-                          ),
-                        ),
-                      ],
+                    _ResumoCard(
+                      label: 'Gasto total',
+                      value: 'R\$ 150,50',
+                      subtext: '+4.2% no último período',
+                      subtextColor: Colors.green, // Cor de destaque fixa
+                      icon: Icons.show_chart,
+                      textColor: textColor,
+                      secondaryTextColor: secondaryTextColor,
+                      cardBackground: cardBackground,
+                      isDarkMode: isDarkMode,
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Quer um resumo do seu consumo no mês? A Assistente Voltrix lê e explica seus padrões de gastos.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: secondaryTextColor, // Cor dinâmica
-                      ),
+                    const SizedBox(height: 15), // Espaçamento entre os cartões
+                    _ResumoCard(
+                      label: 'Hoje',
+                      value: 'R\$ 5,30',
+                      subtext: 'Custo ideal: R\$ 6,00',
+                      subtextColor: secondaryTextColor, // Cor dinâmica
+                      icon: Icons.attach_money,
+                      textColor: textColor,
+                      secondaryTextColor: secondaryTextColor,
+                      cardBackground: cardBackground,
+                      isDarkMode: isDarkMode,
                     ),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/assistente');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text(
-                          'ACESSAR ASSISTENTE',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    )
                   ],
                 ),
-              )
-            ],
+
+                const SizedBox(height: 25),
+
+                // ===================== GRÁFICO =====================
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: cardBackground, // Cor dinâmica
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.12),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Gastos por hora',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: textColor, // Cor dinâmica
+                            ),
+                          ),
+                          Icon(Icons.filter_list, color: secondaryTextColor), // Cor dinâmica
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: secondaryTextColor, // Cor dinâmica
+                              style: BorderStyle.solid,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            color: isDarkMode ? Colors.black : Colors.white, // Fundo do gráfico
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Container(
+                                height: 5,
+                                width: screenWidth * 0.8, 
+                                decoration: BoxDecoration(
+                                  color: primaryColor,
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                '00:00 - 23:59',
+                                style: TextStyle(fontSize: 12, color: secondaryTextColor), // Cor dinâmica
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 25),
+
+                // ===================== MÉDIA SEMANAL E PROJEÇÃO (Cards Menores) =====================
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: screenWidth < 600 ? 1 : 2,
+                  crossAxisSpacing: 15,
+                  mainAxisSpacing: 15,
+                  // CORREÇÃO FINAL: Usando 4.0 para compactar a caixa e acomodar a fonte 28.
+                  childAspectRatio: 4.0, 
+                  children: [
+                    _InfoCard(
+                      label: 'Média semanal',
+                      value: 'R\$ 0,00',
+                      icon: Icons.show_chart,
+                      iconColor: Colors.green,
+                      textColor: textColor,
+                      secondaryTextColor: secondaryTextColor,
+                      cardBackground: cardBackground,
+                      isDarkMode: isDarkMode,
+                    ),
+                    _InfoCard(
+                      label: 'Projeção mensal',
+                      value: 'R\$ 0,00',
+                      icon: Icons.calendar_today,
+                      iconColor: secondaryTextColor,
+                      textColor: textColor,
+                      secondaryTextColor: secondaryTextColor,
+                      cardBackground: cardBackground,
+                      isDarkMode: isDarkMode,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 25),
+
+                // ===================== CARD ASSISTENTE =====================
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: cardBackground, 
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.12),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
+                    border: Border(
+                      top: BorderSide(color: primaryColor, width: 4),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.smart_toy, color: primaryColor, size: 28),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Fale com a Voltrix Assistente',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: textColor, 
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Quer um resumo do seu consumo no mês? A Assistente Voltrix lê e explica seus padrões de gastos.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: secondaryTextColor, 
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/assistente');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text(
+                            'ACESSAR ASSISTENTE',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),
@@ -338,9 +355,10 @@ class _ResumoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      // Padding interno reduzido para compactação
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
       decoration: BoxDecoration(
-        color: cardBackground, // Cor dinâmica
+        color: cardBackground, 
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -352,23 +370,26 @@ class _ResumoCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, 
         children: [
-          Text(label, style: TextStyle(fontSize: 13, color: secondaryTextColor)), // Cor dinâmica
-          const SizedBox(height: 5),
+          Text(label, style: TextStyle(fontSize: 15, color: secondaryTextColor)),
+          // Espaçamento mínimo
+          const SizedBox(height: 1), 
           Text(value,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 28, 
                 fontWeight: FontWeight.bold,
-                color: textColor, // Cor dinâmica
-              )),
-          const SizedBox(height: 5),
+                color: textColor,
+              )), 
+          // Espaçamento mínimo
+          const SizedBox(height: 1), 
           Row(
             children: [
               Icon(icon, size: 14, color: subtextColor),
               const SizedBox(width: 5),
               Text(
                 subtext,
-                style: TextStyle(fontSize: 13, color: subtextColor),
+                style: TextStyle(fontSize: 14, color: subtextColor),
               ),
             ],
           )
@@ -402,7 +423,8 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      // Padding vertical reduzido para 4 pixels (compactação absoluta).
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4), 
       decoration: BoxDecoration(
         color: cardBackground, // Cor dinâmica
         borderRadius: BorderRadius.circular(12),
@@ -416,21 +438,24 @@ class _InfoCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, 
+        mainAxisAlignment: MainAxisAlignment.center, // Centralizando verticalmente
         children: [
           Text(label, style: TextStyle(fontSize: 13, color: secondaryTextColor)), // Cor dinâmica
-          const SizedBox(height: 5),
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: 24,
+                  // Fonte do valor ajustada para 28 (igual ao ResumoCard)
+                  fontSize: 28, 
                   fontWeight: FontWeight.bold,
                   color: textColor, // Cor dinâmica
                 ),
               ),
-              Icon(icon, size: 24, color: iconColor),
+              Icon(icon, size: 20, color: iconColor), // Ícone ligeiramente reduzido
             ],
           )
         ],

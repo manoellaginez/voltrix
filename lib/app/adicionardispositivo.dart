@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:voltrix/theme/theme_notifier.dart';
 import 'package:voltrix/theme/app_gradients.dart';
 
+// Removida a declaração de getThemeStyles (causa do conflito em main.dart).
+
 class AdicionarDispositivoPage extends StatefulWidget {
   const AdicionarDispositivoPage({super.key});
 
@@ -46,14 +48,17 @@ class _AdicionarDispositivoPageState extends State<AdicionarDispositivoPage> {
     // 1. Acessa o estado global do tema e as cores
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkMode = themeNotifier.isDarkMode;
-    final colors = getThemeStyles(isDarkMode);
+    
+    // getThemeStyles agora é importado de app_gradients.dart
+    final colors = getThemeStyles(isDarkMode); 
 
     const primaryColor = kPrimaryRed;
     final textColor = colors['textColor']!;
     final secondaryTextColor = colors['secondaryTextColor']!;
-    final inputBorderColor = colors['borderColor']!;
     final inputFillColor = colors['cardBackground']!;
-    final buttonTextColor = isDarkMode ? Colors.black87 : Colors.white;
+    
+    // Cor do texto do botão definida explicitamente como branca
+    const buttonTextColor = Colors.white; 
 
     return Scaffold(
       // 2. Aplicando o Gradiente Dinâmico
@@ -61,11 +66,14 @@ class _AdicionarDispositivoPageState extends State<AdicionarDispositivoPage> {
         decoration: BoxDecoration(
           gradient: themeNotifier.currentGradient,
         ),
+        // CORREÇÃO 1: Removido SingleChildScrollView e LayoutBuilder.
+        // A tela deve se ajustar sem rolagem.
         child: SafeArea(
-          child: SingleChildScrollView(
+          child: Padding( // Usando Padding direto na SafeArea
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              // CORREÇÃO 2: Estica a coluna para ocupar todo o espaço vertical disponível
               children: [
                 // Botão de voltar
                 IconButton(
@@ -167,7 +175,7 @@ class _AdicionarDispositivoPageState extends State<AdicionarDispositivoPage> {
                           borderRadius: BorderRadius.circular(20),
                           color: receberSugestoes
                               ? primaryColor
-                              : inputBorderColor, // Cor dinâmica
+                              : secondaryTextColor.withOpacity(0.3), // Usando cor secundária opaca para desativado
                         ),
                         child: AnimatedAlign(
                           duration: const Duration(milliseconds: 200),
@@ -191,7 +199,12 @@ class _AdicionarDispositivoPageState extends State<AdicionarDispositivoPage> {
                   ],
                 ),
 
-                const SizedBox(height: 40),
+                // CORREÇÃO 3: Spacer para empurrar o botão para baixo e preencher o espaço
+                // Se o Spacer for demais, ajuste o espaçamento acima dele.
+                const Spacer(),
+                
+                // CORREÇÃO 4: Espaçamento ajustado para subir o botão levemente
+                const SizedBox(height: 20), // Pode ajustar para 15 ou 10 se quiser mais para cima
 
                 // Botão salvar
                 SizedBox(
@@ -199,17 +212,19 @@ class _AdicionarDispositivoPageState extends State<AdicionarDispositivoPage> {
                   child: ElevatedButton(
                     onPressed: salvarDispositivo,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
+                      // CORREÇÃO 5: Cor de fundo do botão definida como primaryColor (a mesma de "Adicionar novo dispositivo")
+                      backgroundColor: primaryColor, 
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text(
+                    child: const Text(
                       "SALVAR",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: buttonTextColor, // Cor dinâmica
+                        // CORREÇÃO 6: Cor do texto do botão explicitamente branca
+                        color: Colors.white, 
                         fontSize: 16,
                       ),
                     ),

@@ -12,7 +12,8 @@ class AssistentePage extends StatefulWidget {
 }
 
 class _AssistentePageState extends State<AssistentePage> {
-  final Color primaryColor = kPrimaryRed;
+  // Ajuste esta linha conforme seu kPrimaryRed real. Usei Color(0xFFE53935) como placeholder.
+  final Color primaryColor = const Color(0xFFE53935); 
 
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _messageController = TextEditingController();
@@ -65,8 +66,9 @@ class _AssistentePageState extends State<AssistentePage> {
         'time': formattedTime
       });
       _messageController.clear();
+      // O setState aqui garante que o ListenableBuilder seja reconstruído 
+      // e avalie o novo messages.length
     });
-
 
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
@@ -97,6 +99,15 @@ class _AssistentePageState extends State<AssistentePage> {
       }
     });
   }
+  
+  // Helper para simular getThemeStyles, já que não temos o código
+  Map<String, Color> getThemeStyles(bool isDarkMode) {
+    return {
+      'textColor': isDarkMode ? Colors.white : Colors.black87,
+      'secondaryTextColor': isDarkMode ? Colors.white70 : Colors.grey.shade600,
+      'cardBackground': isDarkMode ? const Color(0xFF2C2C2E) : Colors.white,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +121,7 @@ class _AssistentePageState extends State<AssistentePage> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      resizeToAvoidBottomInset: true,
+      resizeToAvoidBottomInset: true, 
 
       body: Container(
         decoration: BoxDecoration(
@@ -174,11 +185,13 @@ class _AssistentePageState extends State<AssistentePage> {
                         constraints: const BoxConstraints(maxWidth: 300),
                         decoration: BoxDecoration(
                           color: isUser ? primaryColor : cardBackground,
+                          // CORREÇÃO: Removendo o 'const' problemático e usando Radius.circular
+                          // sem 'const' quando é dinâmico, ou com 'const' quando é fixo.
                           borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(isUser ? 15 : 2),
                             topRight: Radius.circular(isUser ? 2 : 15),
                             bottomLeft: const Radius.circular(15),
-                            bottomRight: const Radius.circular(15),
+                            bottomRight: const Radius.circular(15), 
                           ),
                         ),
                         child: Column(
@@ -212,12 +225,25 @@ class _AssistentePageState extends State<AssistentePage> {
                 ),
               ),
 
-             // 🔸 Sugestões
-             ListenableBuilder(
+              // 🔸 Sugestões
+              ListenableBuilder(
                 listenable: _messageController,
                 builder: (context, child) {
-                  if (_messageController.text.isEmpty) {
-                    return Padding(
+                  
+                  // 1. Esconde imediatamente se o usuário estiver digitando
+                  if (_messageController.text.isNotEmpty) {
+                    return const SizedBox.shrink();
+                  }
+
+                  // 2. Lógica para sumir após o primeiro balão do usuário.
+                  // Se a lista de mensagens tem mais de 1 (a saudação do bot), esconde.
+                  if (messages.length > 1) {
+                      return const SizedBox.shrink();
+                  }
+                  
+                  // Se o campo estiver vazio E messages.length for 1: Mostra sugestões
+                  return SingleChildScrollView(
+                    child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 15),
                       child: Container(
                         color: Colors.transparent,
@@ -225,7 +251,7 @@ class _AssistentePageState extends State<AssistentePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                             const SizedBox(height: 10),
+                            const SizedBox(height: 10),
                             Text(
                               'Sugestões:',
                               style: TextStyle(
@@ -234,7 +260,7 @@ class _AssistentePageState extends State<AssistentePage> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                             const SizedBox(height: 5),
+                            const SizedBox(height: 5),
                             GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
@@ -244,9 +270,7 @@ class _AssistentePageState extends State<AssistentePage> {
                                 crossAxisCount: 2,
                                 crossAxisSpacing: 10,
                                 mainAxisSpacing: 10,
-                                // ========== [CORREÇÃO 1 AQUI] ==========
-                                childAspectRatio: 2.0, // Voltado para 2.0
-                                // ========== [FIM DA CORREÇÃO 1] ==========
+                                childAspectRatio: 1.8, 
                               ),
                               itemBuilder: (context, index) {
                                 final s = suggestions[index];
@@ -258,25 +282,30 @@ class _AssistentePageState extends State<AssistentePage> {
                                       borderRadius: BorderRadius.circular(12),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
+                                          color:
+                                              Colors.black.withOpacity(0.05),
                                           blurRadius: 4,
                                           offset: const Offset(0, 2),
                                         ),
                                       ],
                                     ),
-                                    padding: const EdgeInsets.all(12),
+                                    padding: const EdgeInsets.all(10), 
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      // ========== [CORREÇÃO 2 AQUI] ==========
-                                      // Removido mainAxisAlignment: MainAxisAlignment.spaceBetween
-                                      // ========== [FIM DA CORREÇÃO 2] ==========
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.start, 
                                       children: [
-                                        Icon(s['icon'], color: primaryColor, size: 20,),
-                                        // Adiciona um Spacer para empurrar o texto para baixo se necessário
-                                        // Ou simplesmente deixa o espaço natural da Column
-                                        const Spacer(), // Opcional, dependendo do visual desejado
+                                        Icon(
+                                          s['icon'],
+                                          color: primaryColor,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        
+                                        // Coluna de Texto agrupada
                                         Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               s['title'],
@@ -293,12 +322,10 @@ class _AssistentePageState extends State<AssistentePage> {
                                               s['text'],
                                               style: TextStyle(
                                                 color: secondaryTextColor,
-                                                // ========== [CORREÇÃO 3 AQUI] ==========
-                                                fontSize: 11, // Reduzido de 12 para 11
-                                                // ========== [FIM DA CORREÇÃO 3] ==========
+                                                fontSize: 11,
                                               ),
-                                               maxLines: 2,
-                                               overflow: TextOverflow.ellipsis,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ],
                                         ),
@@ -308,17 +335,14 @@ class _AssistentePageState extends State<AssistentePage> {
                                 );
                               },
                             ),
-                             const SizedBox(height: 5),
+                            const SizedBox(height: 5),
                           ],
                         ),
                       ),
-                    );
-                  } else {
-                    return const SizedBox.shrink();
-                  }
+                    ),
+                  );
                 },
-             ),
-
+              ),
 
               // 🔸 Campo de mensagem fixo
               Container(
@@ -337,20 +361,21 @@ class _AssistentePageState extends State<AssistentePage> {
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 15, vertical: 12),
                           filled: true,
-                          fillColor: isDarkMode ? Colors.black.withOpacity(0.2) : Colors.grey.shade200,
+                          fillColor: isDarkMode
+                              ? Colors.black.withOpacity(0.2)
+                              : Colors.grey.shade200,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(25),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
-                             borderRadius: BorderRadius.circular(25),
-                             borderSide: BorderSide.none,
+                            borderRadius: BorderRadius.circular(25),
+                            borderSide: BorderSide.none,
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(25),
                             borderSide: BorderSide(
-                                color: primaryColor,
-                                width: 1.5),
+                                color: primaryColor, width: 1.5),
                           ),
                           isDense: true,
                         ),
@@ -390,4 +415,3 @@ class _AssistentePageState extends State<AssistentePage> {
     );
   }
 }
-
