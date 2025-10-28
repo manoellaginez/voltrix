@@ -22,7 +22,7 @@ import 'package:voltrix/app/detalhepainelsolar.dart';
 // O 'detalhedispositivo.dart' é importado na 'inicio.dart', não aqui.
 
 // Importações dos Widgets
-import 'package:voltrix/widgets/navbar.dart'; // Corrigido para 'navbar.dart'
+import 'package:voltrix/widgets/NavBar.dart'; // Corrigido para 'navbar.dart'
 
 // Opções do Firebase
 import 'package:voltrix/firebase_options.dart';
@@ -163,7 +163,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     // Ouve o tema para as cores da Navbar
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkMode = themeNotifier.isDarkMode;
-    final colors = getThemeStyles(isDarkMode);
+    getThemeStyles(isDarkMode);
 
     return Scaffold(
       backgroundColor: Colors.transparent,

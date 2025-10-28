@@ -58,8 +58,6 @@ class _AdicionarDispositivoPageState extends State<AdicionarDispositivoPage> {
     final inputFillColor = colors['cardBackground']!;
     
     // Cor do texto do botão definida explicitamente como branca
-    const buttonTextColor = Colors.white; 
-
     return Scaffold(
       // 2. Aplicando o Gradiente Dinâmico
       body: Container(

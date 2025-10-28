@@ -1,10 +1,24 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:voltrix/theme/theme_notifier.dart'; // Import do Notifier
-import 'package:voltrix/theme/app_gradients.dart'; // Import das constantes
-import 'package:feather_icons/feather_icons.dart'; // Mantendo este import para compatibilidade
+import 'package:http/http.dart' as http;
 
-// ============== REMOVIDOS OS HELPERS DUPLICADOS NOVAMENTE ==============
+import 'package:voltrix/theme/theme_notifier.dart';
+import 'package:voltrix/theme/app_gradients.dart';
+
+// ================== CONFIG ==================
+// Pode sobrescrever em build/run:
+// --dart-define=BACKEND_BASE_URL=http://10.0.0.12:8000
+// --dart-define=KWH_PRICE=0.95
+const String kBackendBaseUrlEnv =
+    String.fromEnvironment('BACKEND_BASE_URL', defaultValue: 'http://127.0.0.1:8000');
+const double kDefaultKwhPrice = 0.95;
+
+// ============================================
 
 class GastosPage extends StatefulWidget {
   const GastosPage({super.key});
@@ -16,14 +30,175 @@ class GastosPage extends StatefulWidget {
 class _GastosPageState extends State<GastosPage> {
   String activeFilter = 'Hoje';
 
+  late final String _baseUrl;
+  double _kwhPrice = kDefaultKwhPrice;
+
+  bool _loadingDevices = false;
+  bool _loadingEnergy = false;
+
+  List<_Device> _devices = const [];
+  String? _selectedDeviceId;
+
+  EnergySnapshot? _snap;
+  Timer? _autoTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _baseUrl = _resolveBaseUrl(kBackendBaseUrlEnv);
+    _kwhPrice = kDefaultKwhPrice;
+    _fetchDevices().then((_) {
+      if (_selectedDeviceId != null) {
+        _fetchEnergy();
+      }
+      // Auto-refresh a cada 30s
+      _autoTimer = Timer.periodic(const Duration(seconds: 30), (_) => _fetchEnergy());
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoTimer?.cancel();
+    super.dispose();
+  }
+
+  // =============== Helpers de URL ===============
+  String _resolveBaseUrl(String raw) {
+    String url = raw.trim();
+    if (url.endsWith('/')) url = url.substring(0, url.length - 1);
+    if (!kIsWeb) {
+      try {
+        if (Platform.isAndroid && (url.contains('127.0.0.1') || url.contains('localhost'))) {
+          url = url.replaceFirst(RegExp(r'127\.0\.0\.1|localhost'), '10.0.2.2');
+        }
+      } catch (_) {}
+    }
+    return url;
+  }
+
+  Uri _buildUri(String path) {
+    final hasScheme = _baseUrl.startsWith('http://') || _baseUrl.startsWith('https://');
+    final base = hasScheme ? _baseUrl : 'http://$_baseUrl';
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return Uri.parse('$base$cleanPath');
+  }
+
+  void _toast(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  String _money(double? v) {
+    if (v == null || v.isNaN || v.isInfinite) return 'R\$ 0,00';
+    return 'R\$ ${v.toStringAsFixed(2)}';
+  }
+
+  String _kwh(double? v, {int digits = 3}) {
+    if (v == null || v.isNaN || v.isInfinite) return '0.000';
+    return v.toStringAsFixed(digits);
+  }
+
+  // =============== Backend calls ===============
+  Future<void> _fetchDevices() async {
+    setState(() => _loadingDevices = true);
+    try {
+      final resp = await http.get(_buildUri('/devices')).timeout(const Duration(seconds: 20));
+      if (resp.statusCode == 200) {
+        final list = jsonDecode(resp.body);
+        if (list is List) {
+          final ds = list
+              .map((e) => _Device(
+                    id: (e['id'] ?? '').toString(),
+                    title: (e['title'] ?? '').toString(),
+                    ip: (e['ip'] ?? '').toString(),
+                  ))
+              .toList()
+              .cast<_Device>();
+          setState(() {
+            _devices = ds;
+            _selectedDeviceId ??= ds.isNotEmpty ? ds.first.id : null;
+          });
+        } else {
+          _toast('Resposta inválida de /devices');
+        }
+      } else {
+        String detail = '';
+        try {
+          final m = jsonDecode(resp.body);
+          if (m is Map && m['detail'] != null) detail = ' (${m['detail']})';
+        } catch (_) {}
+        _toast('Falha ao buscar dispositivos (HTTP ${resp.statusCode})$detail');
+      }
+    } on TimeoutException {
+      _toast('Tempo esgotado ao buscar dispositivos.');
+    } on SocketException {
+      _toast('Sem conexão com o servidor ao buscar dispositivos.');
+    } catch (e) {
+      _toast('Erro ao buscar dispositivos: $e');
+    } finally {
+      if (mounted) setState(() => _loadingDevices = false);
+    }
+  }
+
+  Future<void> _fetchEnergy() async {
+    final id = _selectedDeviceId;
+    if (id == null) return;
+    setState(() => _loadingEnergy = true);
+    try {
+      final resp =
+          await http.get(_buildUri('/devices/$id/energy')).timeout(const Duration(seconds: 20));
+      if (resp.statusCode == 200) {
+        final m = jsonDecode(resp.body);
+        setState(() {
+          _snap = EnergySnapshot.fromJson(m);
+        });
+      } else {
+        String detail = '';
+        try {
+          final m = jsonDecode(resp.body);
+          if (m is Map && m['detail'] != null) detail = ' (${m['detail']})';
+        } catch (_) {}
+        _toast('Falha ao ler energia (HTTP ${resp.statusCode})$detail');
+      }
+    } on TimeoutException {
+      _toast('Tempo esgotado ao consultar energia.');
+    } on SocketException {
+      _toast('Sem conexão com o servidor ao consultar energia.');
+    } catch (e) {
+      _toast('Erro ao consultar energia: $e');
+    } finally {
+      if (mounted) setState(() => _loadingEnergy = false);
+    }
+  }
+
+  // =============== Cálculos de custo/projeção ===============
+  double _costFromKwh(double? kwh) => (kwh ?? 0.0) * _kwhPrice;
+
+  ({double costToday, double costMonth, double projMonthCost}) _calcCosts() {
+    final kwhHoje = _snap?.kwhHoje ?? 0.0;
+    final kwhMes = _snap?.kwhMes ?? 0.0;
+
+    final costToday = _costFromKwh(kwhHoje);
+    final costMonth = _costFromKwh(kwhMes);
+
+    // projeção mensal simples: (kwh_mes / diaAtual) * diasNoMes
+    final now = DateTime.now();
+    final dia = now.day;
+    final diasNoMes = DateUtils.getDaysInMonth(now.year, now.month);
+    final projKwh = (dia > 0) ? (kwhMes / dia) * diasNoMes : kwhMes;
+    final projMonthCost = _costFromKwh(projKwh);
+
+    return (costToday: costToday, costMonth: costMonth, projMonthCost: projMonthCost);
+  }
+
+  // =============== UI ===============
   @override
   Widget build(BuildContext context) {
-    // 1. Acessa o estado global do tema e as cores
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkMode = themeNotifier.isDarkMode;
-    
-    // Supondo que getThemeStyles está no arquivo app_gradients.dart ou em outro import
-    final colors = getThemeStyles(isDarkMode); 
+    final colors = getThemeStyles(isDarkMode);
 
     const primaryColor = kPrimaryRed;
     final textColor = colors['textColor']!;
@@ -32,46 +207,104 @@ class _GastosPageState extends State<GastosPage> {
 
     final screenWidth = MediaQuery.of(context).size.width;
 
+    final costs = _calcCosts();
+
     return Scaffold(
-      // 2. Aplicando o Gradiente Dinâmico na raiz
       body: Container(
-        decoration: BoxDecoration(
-          gradient: themeNotifier.currentGradient,
-        ),
-        // Adicionado SafeArea para resolver o problema do header "bugado"
+        decoration: BoxDecoration(gradient: themeNotifier.currentGradient),
         child: SafeArea(
           child: SingleChildScrollView(
-            // Ajustando o padding superior para 0, pois o SafeArea já gerencia o topo
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 20), // Padding no topo após o SafeArea
+                const SizedBox(height: 20),
+
                 // ===================== CABEÇALHO =====================
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Gastos',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
-                        ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Gastos',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Monitore seus custos de energia',
+                            style: TextStyle(fontSize: 17, color: secondaryTextColor),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'Monitore seus custos de energia',
-                        style: TextStyle(
-                          fontSize: 17,
-                          color: secondaryTextColor, // Cor dinâmica
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    // Seletor de Dispositivo + botões
+                    SizedBox(
+                      width: 210,
+                      child: _loadingDevices
+                          ? const Center(
+                              child: SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2)))
+                          : DropdownButtonFormField<String>(
+                              value: _selectedDeviceId,
+                              isDense: true,
+                              decoration: InputDecoration(
+                                contentPadding:
+                                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                filled: true,
+                                fillColor:
+                                    isDarkMode ? Colors.black.withOpacity(0.2) : Colors.grey.shade200,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              hint: const Text('Dispositivo'),
+                              items: _devices
+                                  .map(
+                                    (d) => DropdownMenuItem<String>(
+                                      value: d.id,
+                                      child: Text(
+                                        d.title.isNotEmpty ? d.title : 'ID ${d.id} (${d.ip})',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (v) => setState(() {
+                                _selectedDeviceId = v;
+                                _fetchEnergy();
+                              }),
+                            ),
+                    ),
+                    IconButton(
+                      tooltip: 'Atualizar lista',
+                      onPressed: _loadingDevices ? null : _fetchDevices,
+                      icon: const Icon(Icons.refresh),
+                      color: primaryColor,
+                    ),
+                    IconButton(
+                      tooltip: 'Ler energia agora',
+                      onPressed: _loadingEnergy ? null : _fetchEnergy,
+                      icon: _loadingEnergy
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.bolt),
+                      color: primaryColor,
+                    ),
+                  ],
                 ),
+
                 const SizedBox(height: 25),
 
                 // ===================== FILTROS =====================
@@ -87,11 +320,8 @@ class _GastosPageState extends State<GastosPage> {
                             setState(() => activeFilter = filter);
                           },
                           style: ElevatedButton.styleFrom(
-                            // Cores dinâmicas para o filtro
-                            backgroundColor:
-                                isActive ? primaryColor : cardBackground,
-                            foregroundColor:
-                                isActive ? Colors.white : secondaryTextColor,
+                            backgroundColor: isActive ? primaryColor : cardBackground,
+                            foregroundColor: isActive ? Colors.white : secondaryTextColor,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -100,10 +330,7 @@ class _GastosPageState extends State<GastosPage> {
                           ),
                           child: Text(
                             filter.toUpperCase(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                           ),
                         ),
                       ),
@@ -118,23 +345,23 @@ class _GastosPageState extends State<GastosPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _ResumoCard(
-                      label: 'Gasto total',
-                      value: 'R\$ 150,50',
-                      subtext: '+4.2% no último período',
-                      subtextColor: Colors.green, // Cor de destaque fixa
-                      icon: Icons.show_chart,
+                      label: 'Custo no mês',
+                      value: _money(costs.costMonth),
+                      subtext: 'Tarifa: ${_money(_kwhPrice)}/kWh',
+                      subtextColor: secondaryTextColor,
+                      icon: Icons.calendar_month,
                       textColor: textColor,
                       secondaryTextColor: secondaryTextColor,
                       cardBackground: cardBackground,
                       isDarkMode: isDarkMode,
                     ),
-                    const SizedBox(height: 15), // Espaçamento entre os cartões
+                    const SizedBox(height: 15),
                     _ResumoCard(
                       label: 'Hoje',
-                      value: 'R\$ 5,30',
-                      subtext: 'Custo ideal: R\$ 6,00',
-                      subtextColor: secondaryTextColor, // Cor dinâmica
-                      icon: Icons.attach_money,
+                      value: _money(costs.costToday),
+                      subtext: 'Consumo: ${_kwh(_snap?.kwhHoje)} kWh',
+                      subtextColor: secondaryTextColor,
+                      icon: Icons.today,
                       textColor: textColor,
                       secondaryTextColor: secondaryTextColor,
                       cardBackground: cardBackground,
@@ -143,13 +370,45 @@ class _GastosPageState extends State<GastosPage> {
                   ],
                 ),
 
+                const SizedBox(height: 15),
+
+                // ===================== STATUS INSTANTÂNEO =====================
+                if (_snap != null)
+                  Container(
+                    padding: const EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: cardBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.12),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                      border: Border(top: BorderSide(color: primaryColor, width: 3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.power, color: primaryColor, size: 26),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Instantâneo: ${(_snap!.wInstantaneo ?? 0).toStringAsFixed(1)} W  ·  Hoje: ${_kwh(_snap!.kwhHoje)} kWh  ·  Mês: ${_kwh(_snap!.kwhMes)} kWh',
+                            style: TextStyle(fontSize: 14, color: textColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 const SizedBox(height: 25),
 
-                // ===================== GRÁFICO =====================
+                // ===================== GRÁFICO (placeholder) =====================
                 Container(
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
-                    color: cardBackground, // Cor dinâmica
+                    color: cardBackground,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
@@ -164,15 +423,10 @@ class _GastosPageState extends State<GastosPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Gastos por hora',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: textColor, // Cor dinâmica
-                            ),
-                          ),
-                          Icon(Icons.filter_list, color: secondaryTextColor), // Cor dinâmica
+                          Text('Gastos por hora',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w600, color: textColor)),
+                          Icon(Icons.filter_list, color: secondaryTextColor),
                         ],
                       ),
                       const SizedBox(height: 15),
@@ -180,31 +434,16 @@ class _GastosPageState extends State<GastosPage> {
                         aspectRatio: 16 / 9,
                         child: Container(
                           decoration: BoxDecoration(
-                            border: Border.all(
-                              color: secondaryTextColor, // Cor dinâmica
-                              style: BorderStyle.solid,
-                            ),
+                            border: Border.all(color: secondaryTextColor),
                             borderRadius: BorderRadius.circular(8),
-                            color: isDarkMode ? Colors.black : Colors.white, // Fundo do gráfico
+                            color: isDarkMode ? Colors.black : Colors.white,
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Container(
-                                height: 5,
-                                width: screenWidth * 0.8, 
-                                decoration: BoxDecoration(
-                                  color: primaryColor,
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                '00:00 - 23:59',
-                                style: TextStyle(fontSize: 12, color: secondaryTextColor), // Cor dinâmica
-                              ),
-                              const SizedBox(height: 8),
-                            ],
+                          child: Center(
+                            child: Text(
+                              'Em breve: série temporal\n(consumo vs hora)\n\nDevice: ${_snap?.title ?? '-'}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: secondaryTextColor),
+                            ),
                           ),
                         ),
                       ),
@@ -214,20 +453,19 @@ class _GastosPageState extends State<GastosPage> {
 
                 const SizedBox(height: 25),
 
-                // ===================== MÉDIA SEMANAL E PROJEÇÃO (Cards Menores) =====================
+                // ===================== CARDS MENORES =====================
                 GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: screenWidth < 600 ? 1 : 2,
                   crossAxisSpacing: 15,
                   mainAxisSpacing: 15,
-                  // CORREÇÃO FINAL: Usando 4.0 para compactar a caixa e acomodar a fonte 28.
-                  childAspectRatio: 4.0, 
+                  childAspectRatio: 4.0,
                   children: [
                     _InfoCard(
-                      label: 'Média semanal',
-                      value: 'R\$ 0,00',
-                      icon: Icons.show_chart,
+                      label: 'Projeção mensal',
+                      value: _money(costs.projMonthCost),
+                      icon: Icons.trending_up,
                       iconColor: Colors.green,
                       textColor: textColor,
                       secondaryTextColor: secondaryTextColor,
@@ -235,9 +473,9 @@ class _GastosPageState extends State<GastosPage> {
                       isDarkMode: isDarkMode,
                     ),
                     _InfoCard(
-                      label: 'Projeção mensal',
-                      value: 'R\$ 0,00',
-                      icon: Icons.calendar_today,
+                      label: 'Tarifa aplicada',
+                      value: _money(_kwhPrice) + '/kWh',
+                      icon: Icons.monetization_on,
                       iconColor: secondaryTextColor,
                       textColor: textColor,
                       secondaryTextColor: secondaryTextColor,
@@ -253,7 +491,7 @@ class _GastosPageState extends State<GastosPage> {
                 Container(
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
-                    color: cardBackground, 
+                    color: cardBackground,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
@@ -262,9 +500,7 @@ class _GastosPageState extends State<GastosPage> {
                         offset: const Offset(0, 2),
                       )
                     ],
-                    border: Border(
-                      top: BorderSide(color: primaryColor, width: 4),
-                    ),
+                    border: Border(top: BorderSide(color: primaryColor, width: 4)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,7 +514,7 @@ class _GastosPageState extends State<GastosPage> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: textColor, 
+                              color: textColor,
                             ),
                           ),
                         ],
@@ -286,10 +522,7 @@ class _GastosPageState extends State<GastosPage> {
                       const SizedBox(height: 10),
                       Text(
                         'Quer um resumo do seu consumo no mês? A Assistente Voltrix lê e explica seus padrões de gastos.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: secondaryTextColor, 
-                        ),
+                        style: TextStyle(fontSize: 14, color: secondaryTextColor),
                       ),
                       const SizedBox(height: 15),
                       SizedBox(
@@ -299,7 +532,7 @@ class _GastosPageState extends State<GastosPage> {
                             Navigator.pushNamed(context, '/assistente');
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
+                            backgroundColor: kPrimaryRed,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -308,10 +541,7 @@ class _GastosPageState extends State<GastosPage> {
                           ),
                           child: const Text(
                             'ACESSAR ASSISTENTE',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                         ),
                       )
@@ -327,7 +557,44 @@ class _GastosPageState extends State<GastosPage> {
   }
 }
 
-// ===================== WIDGETS REUTILIZÁVEIS =====================
+// ===================== MODELOS / WIDGETS =====================
+
+class _Device {
+  final String id;
+  final String title;
+  final String ip;
+  const _Device({required this.id, required this.title, required this.ip});
+}
+
+class EnergySnapshot {
+  final String? deviceId;
+  final String? title;
+  final String? ip;
+  final double? wInstantaneo;
+  final double? kwhHoje;
+  final double? kwhMes;
+  final bool? ligado;
+
+  EnergySnapshot({
+    this.deviceId,
+    this.title,
+    this.ip,
+    this.wInstantaneo,
+    this.kwhHoje,
+    this.kwhMes,
+    this.ligado,
+  });
+
+  factory EnergySnapshot.fromJson(Map<String, dynamic> m) => EnergySnapshot(
+        deviceId: m['device_id']?.toString(),
+        title: m['title']?.toString(),
+        ip: m['ip']?.toString(),
+        wInstantaneo: (m['w_instantaneo'] is num) ? (m['w_instantaneo'] as num).toDouble() : null,
+        kwhHoje: (m['kwh_hoje'] is num) ? (m['kwh_hoje'] as num).toDouble() : null,
+        kwhMes: (m['kwh_mes'] is num) ? (m['kwh_mes'] as num).toDouble() : null,
+        ligado: (m['ligado'] is bool) ? m['ligado'] as bool : null,
+      );
+}
 
 class _ResumoCard extends StatelessWidget {
   final String label;
@@ -355,10 +622,9 @@ class _ResumoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Padding interno reduzido para compactação
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: cardBackground, 
+        color: cardBackground,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -370,26 +636,21 @@ class _ResumoCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, 
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(label, style: TextStyle(fontSize: 15, color: secondaryTextColor)),
-          // Espaçamento mínimo
-          const SizedBox(height: 1), 
-          Text(value,
-              style: TextStyle(
-                fontSize: 28, 
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              )), 
-          // Espaçamento mínimo
-          const SizedBox(height: 1), 
+          const SizedBox(height: 1),
+          Text(
+            value,
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: textColor),
+          ),
+          const SizedBox(height: 1),
           Row(
             children: [
               Icon(icon, size: 14, color: subtextColor),
               const SizedBox(width: 5),
-              Text(
-                subtext,
-                style: TextStyle(fontSize: 14, color: subtextColor),
+              Expanded(
+                child: Text(subtext, style: TextStyle(fontSize: 14, color: subtextColor)),
               ),
             ],
           )
@@ -423,10 +684,9 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Padding vertical reduzido para 4 pixels (compactação absoluta).
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4), 
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
       decoration: BoxDecoration(
-        color: cardBackground, // Cor dinâmica
+        color: cardBackground,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -438,24 +698,18 @@ class _InfoCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, 
-        mainAxisAlignment: MainAxisAlignment.center, // Centralizando verticalmente
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: TextStyle(fontSize: 13, color: secondaryTextColor)), // Cor dinâmica
-          
+          Text(label, style: TextStyle(fontSize: 13, color: secondaryTextColor)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 value,
-                style: TextStyle(
-                  // Fonte do valor ajustada para 28 (igual ao ResumoCard)
-                  fontSize: 28, 
-                  fontWeight: FontWeight.bold,
-                  color: textColor, // Cor dinâmica
-                ),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: textColor),
               ),
-              Icon(icon, size: 20, color: iconColor), // Ícone ligeiramente reduzido
+              Icon(icon, size: 20, color: iconColor),
             ],
           )
         ],
